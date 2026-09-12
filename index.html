@@ -454,6 +454,63 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── PASSWORD TOGGLE ── */
+    .pass-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .pass-wrap input {
+      width: 100%;
+      padding-right: 40px;
+    }
+    .btn-eye {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+    .btn-eye:hover { color: var(--text2); }
+
+    /* ── USUARIOS (admin) ── */
+    .users-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .user-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .user-info { display: flex; flex-direction: column; gap: 3px; }
+    .user-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .user-meta { font-size: 12px; color: var(--text3); }
+    .tag-admin { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .tag-vendedor { background: rgba(108,99,255,0.15); color: var(--accent2); }
+    .btn-del-user {
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .btn-del-user:hover { color: var(--red); }
+
     /* ── TOAST ── */
     .toast {
       position: fixed;
@@ -514,7 +571,13 @@
         </div>
         <div class="field">
           <label>Contraseña</label>
-          <input type="password" id="inp-pass" placeholder="••••••" autocomplete="current-password">
+          <div class="pass-wrap">
+            <input type="password" id="inp-pass" placeholder="••••••" autocomplete="current-password">
+            <button type="button" class="btn-eye" onclick="togglePass('inp-pass', this)" title="Mostrar contraseña">
+              <svg id="eye-show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="eye-hide" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
         </div>
         <p class="err" id="login-err"></p>
         <button class="btn btn-accent" onclick="doLogin()">Entrar</button>
@@ -534,6 +597,7 @@
         <button class="nav-tab" onclick="goTab('venta',this)">Cargar venta</button>
         <button class="nav-tab" onclick="goTab('stock',this)">Stock</button>
         <button class="nav-tab" onclick="goTab('historial',this)">Historial</button>
+        <button class="nav-tab" id="tab-btn-usuarios" style="display:none" onclick="goTab('usuarios',this)">Usuarios</button>
       </div>
     </div>
     <div class="nav-right">
@@ -548,6 +612,7 @@
     <button class="nav-tab" onclick="goTab('venta',this)">Cargar venta</button>
     <button class="nav-tab" onclick="goTab('stock',this)">Stock</button>
     <button class="nav-tab" onclick="goTab('historial',this)">Historial</button>
+    <button class="nav-tab" id="mob-tab-btn-usuarios" style="display:none" onclick="goTab('usuarios',this)">Usuarios</button>
   </div>
 
   <div class="main">
@@ -667,6 +732,52 @@
       </div>
     </div>
 
+    <!-- USUARIOS (solo admin) -->
+    <div class="tab-content" id="tab-usuarios">
+      <div class="section-hd">
+        <h2>Usuarios del sistema</h2>
+        <button class="btn-sm" onclick="loadUsuarios()">↻ Actualizar</button>
+      </div>
+      <div class="users-grid" id="users-grid">
+        <div class="loader"><div class="spinner"></div> Cargando...</div>
+      </div>
+
+      <div class="form-card" style="margin-top:8px">
+        <h2>Crear usuario nuevo</h2>
+        <div class="form-row">
+          <div class="field">
+            <label>Nombre</label>
+            <input type="text" id="u-nombre" placeholder="Ej: María">
+          </div>
+          <div class="field">
+            <label>Usuario</label>
+            <input type="text" id="u-usuario" placeholder="Ej: maria123">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Contraseña</label>
+            <div class="pass-wrap">
+              <input type="password" id="u-pass" placeholder="••••••">
+              <button type="button" class="btn-eye" onclick="togglePass('u-pass', this)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Rol</label>
+            <select id="u-rol">
+              <option value="vendedor">Vendedor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <p class="err" id="u-err"></p>
+        <button class="btn btn-accent" id="u-btn" onclick="crearUsuario()">Crear usuario</button>
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /screen-app -->
 
@@ -680,15 +791,6 @@
 const SUPABASE_URL = 'https://wnaxkfnkhwveamrswwim.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_nnJa7QKdYLiwxKEyvos9qg_YNRUU185';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ══════════════════════════════════════════════
-//  USUARIOS (podés cambiarlos)
-// ══════════════════════════════════════════════
-const USERS = {
-  'vendedor1': { pass: 'pass1',   display: 'Vendedor 1' },
-  'vendedor2': { pass: 'pass2',   display: 'Vendedor 2' },
-  'admin':     { pass: 'admin123', display: 'Admin' }
-};
 
 let currentUser = null;
 
@@ -725,20 +827,114 @@ document.getElementById('inp-pass').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
 
-function doLogin() {
+// ── MOSTRAR/OCULTAR CONTRASEÑA ──
+function togglePass(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const svgs = btn.querySelectorAll('svg');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    svgs[0].style.display = 'none';
+    svgs[1].style.display = 'block';
+  } else {
+    inp.type = 'password';
+    svgs[0].style.display = 'block';
+    svgs[1].style.display = 'none';
+  }
+}
+
+// ── LOGIN CON SUPABASE ──
+async function doLogin() {
   const u = document.getElementById('inp-user').value.trim().toLowerCase();
   const p = document.getElementById('inp-pass').value;
   const err = document.getElementById('login-err');
+  const btn = document.querySelector('#screen-login .btn-accent');
   err.textContent = '';
   if (!u || !p) { err.textContent = 'Completá los campos.'; return; }
-  if (USERS[u] && USERS[u].pass === p) {
-    currentUser = { id: u, display: USERS[u].display };
-    document.getElementById('vendor-chip').textContent = currentUser.display;
-    showScreen('screen-app');
-    loadDashboard();
-  } else {
+
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+
+  const { data, error } = await sb
+    .from('usuarios')
+    .select('*')
+    .eq('usuario', u)
+    .eq('password', p)
+    .single();
+
+  btn.textContent = 'Entrar';
+  btn.disabled = false;
+
+  if (error || !data) {
     err.textContent = 'Usuario o contraseña incorrectos.';
+    return;
   }
+
+  currentUser = { id: data.id, usuario: data.usuario, display: data.nombre, rol: data.rol };
+  document.getElementById('vendor-chip').textContent = currentUser.display;
+
+  // Mostrar tab Usuarios solo si es admin
+  const esAdmin = currentUser.rol === 'admin';
+  document.getElementById('tab-btn-usuarios').style.display = esAdmin ? 'inline-block' : 'none';
+  document.getElementById('mob-tab-btn-usuarios').style.display = esAdmin ? 'inline-block' : 'none';
+
+  showScreen('screen-app');
+  loadDashboard();
+}
+
+// ── USUARIOS (admin) ──
+async function loadUsuarios() {
+  const grid = document.getElementById('users-grid');
+  grid.innerHTML = `<div class="loader"><div class="spinner"></div> Cargando...</div>`;
+  const { data, error } = await sb.from('usuarios').select('*').order('created_at');
+  if (error) { grid.innerHTML = '<p style="color:var(--red);padding:16px">Error al cargar usuarios.</p>'; return; }
+  grid.innerHTML = data.map(u => `
+    <div class="user-card">
+      <div class="user-info">
+        <span class="user-name">${u.nombre}</span>
+        <span class="user-meta">@${u.usuario}</span>
+        <span class="tag ${u.rol === 'admin' ? 'tag-admin' : 'tag-vendedor'}" style="margin-top:4px;width:fit-content">${u.rol}</span>
+      </div>
+      ${u.usuario !== 'admin' ? `<button class="btn-del-user" onclick="deleteUsuario(${u.id}, '${u.nombre}')" title="Eliminar">×</button>` : ''}
+    </div>
+  `).join('');
+}
+
+async function crearUsuario() {
+  const nombre  = document.getElementById('u-nombre').value.trim();
+  const usuario = document.getElementById('u-usuario').value.trim().toLowerCase();
+  const pass    = document.getElementById('u-pass').value;
+  const rol     = document.getElementById('u-rol').value;
+  const err     = document.getElementById('u-err');
+  const btn     = document.getElementById('u-btn');
+  err.textContent = '';
+  if (!nombre || !usuario || !pass) { err.textContent = 'Completá todos los campos.'; return; }
+  if (pass.length < 4) { err.textContent = 'La contraseña debe tener al menos 4 caracteres.'; return; }
+
+  btn.textContent = 'Creando...';
+  btn.disabled = true;
+
+  const { error } = await sb.from('usuarios').insert([{ nombre, usuario, password: pass, rol }]);
+
+  btn.textContent = 'Crear usuario';
+  btn.disabled = false;
+
+  if (error) {
+    err.textContent = error.code === '23505' ? 'Ese nombre de usuario ya existe.' : 'Error al crear usuario.';
+    return;
+  }
+
+  document.getElementById('u-nombre').value = '';
+  document.getElementById('u-usuario').value = '';
+  document.getElementById('u-pass').value = '';
+  showToast('✓ Usuario creado', 'ok');
+  loadUsuarios();
+}
+
+async function deleteUsuario(id, nombre) {
+  if (!confirm(`¿Eliminar al usuario "${nombre}"?`)) return;
+  await sb.from('usuarios').delete().eq('id', id);
+  showToast('Usuario eliminado', 'ok');
+  loadUsuarios();
 }
 
 function doLogout() {
@@ -762,6 +958,7 @@ function goTab(tab, btn) {
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'stock')     loadStock();
   if (tab === 'historial') loadHistorial();
+  if (tab === 'usuarios')  loadUsuarios();
 }
 
 // ══════════════════════════════════════════════
