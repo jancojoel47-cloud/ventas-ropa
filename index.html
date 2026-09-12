@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VentaApp — Gestión de ventas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222535;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #eef0f6;
+      --text2: #8b90a7;
+      --text3: #555a72;
+      --accent: #6c63ff;
+      --accent2: #8b85ff;
+      --green: #22c55e;
+      --green2: #16a34a;
+      --red: #ef4444;
+      --gold: #f59e0b;
+      --purple: #a855f7;
+      --radius: 10px;
+      --radius2: 6px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    input, select, textarea, button { font-family: inherit; font-size: 14px; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── LOGIN ── */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(ellipse at 60% 20%, rgba(108,99,255,0.12) 0%, transparent 60%),
+                  var(--bg);
+    }
+    .login-box {
+      width: 100%;
+      max-width: 360px;
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-brand h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .login-brand h1 span { color: var(--accent2); }
+    .login-brand p {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 14px;
+      padding: 28px;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .field input, .field select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+    }
+    .field input::placeholder { color: var(--text3); }
+    .btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius2);
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-accent:hover { background: var(--accent2); }
+    .btn-green {
+      background: var(--green2);
+      color: #fff;
+    }
+    .btn-green:hover { background: var(--green); }
+    .err {
+      font-size: 12px;
+      color: var(--red);
+      min-height: 16px;
+      margin-bottom: 12px;
+    }
+    .ok {
+      font-size: 12px;
+      color: var(--green);
+      min-height: 16px;
+      margin-bottom: 12px;
+    }
+
+    /* ── NAV ── */
+    .navbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-left { display: flex; align-items: center; gap: 24px; }
+    .nav-brand {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+    .nav-brand span { color: var(--accent2); }
+    .nav-tabs { display: flex; gap: 2px; }
+    .nav-tab {
+      background: none;
+      border: none;
+      padding: 7px 14px;
+      border-radius: var(--radius2);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .nav-tab:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .nav-tab.active { background: rgba(108,99,255,0.15); color: var(--accent2); }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .vendor-chip {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+    .btn-sm {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      padding: 5px 12px;
+      border-radius: var(--radius2);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-sm:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── MAIN ── */
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── METRICS ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .metric-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .metric-val {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-hd h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead th {
+      text-align: left;
+      font-weight: 500;
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--text3);
+      font-size: 13px;
+    }
+
+    /* ── TAGS ── */
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tag-ropa { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .tag-accs { background: rgba(108,99,255,0.15); color: var(--accent2); }
+    .tag-ars  { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .tag-usd  { background: rgba(245,158,11,0.12); color: #fbbf24; }
+    .tag-brl  { background: rgba(239,68,68,0.12); color: #f87171; }
+
+    /* ── FORM CARD ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 500px;
+    }
+    .form-card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* ── STOCK ── */
+    .stock-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .stock-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .stock-box h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .stock-row:last-of-type { border-bottom: none; }
+    .stock-name { font-size: 13px; color: var(--text); }
+    .stock-controls { display: flex; align-items: center; gap: 10px; }
+    .stock-qty {
+      font-size: 15px;
+      font-weight: 600;
+      min-width: 28px;
+      text-align: center;
+      color: var(--text);
+    }
+    .stock-qty.low { color: var(--red); }
+    .btn-qty {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .btn-qty:hover { background: rgba(255,255,255,0.1); }
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .add-row input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 8px 10px;
+      color: var(--text);
+      outline: none;
+    }
+    .add-row input:focus { border-color: var(--accent); }
+    .add-row input::placeholder { color: var(--text3); }
+    .btn-outline {
+      border: 1px solid var(--accent);
+      background: none;
+      color: var(--accent2);
+      padding: 8px 14px;
+      border-radius: var(--radius2);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-outline:hover { background: rgba(108,99,255,0.1); }
+    .btn-del {
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 15px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .btn-del:hover { color: var(--red); }
+
+    /* ── FILTERS ── */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-sel {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      border-radius: var(--radius2);
+      padding: 7px 12px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .filter-sel:focus { border-color: var(--accent); }
+
+    /* ── LOADER ── */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      color: var(--text3);
+      font-size: 13px;
+      gap: 8px;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 999;
+      max-width: 280px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.ok { border-color: rgba(34,197,94,0.4); }
+    .toast.fail { border-color: rgba(239,68,68,0.4); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .nav-tabs { display: none; }
+      .mobile-nav {
+        display: flex;
+        overflow-x: auto;
+        gap: 4px;
+        padding: 8px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      .mobile-nav .nav-tab { white-space: nowrap; }
+      .form-row { grid-template-columns: 1fr; }
+      .stock-cols { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 641px) {
+      .mobile-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="screen active" id="screen-login">
+  <div class="login-page">
+    <div class="login-box">
+      <div class="login-brand">
+        <h1>Venta<span>App</span></h1>
+        <p>Sistema de ventas — ropa &amp; accesorios</p>
+      </div>
+      <div class="login-card">
+        <div class="field">
+          <label>Usuario</label>
+          <input type="text" id="inp-user" placeholder="Tu nombre de usuario" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="inp-pass" placeholder="••••••" autocomplete="current-password">
+        </div>
+        <p class="err" id="login-err"></p>
+        <button class="btn btn-accent" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div class="screen" id="screen-app">
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <span class="nav-brand">Venta<span>App</span></span>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="goTab('dashboard',this)">Dashboard</button>
+        <button class="nav-tab" onclick="goTab('venta',this)">Cargar venta</button>
+        <button class="nav-tab" onclick="goTab('stock',this)">Stock</button>
+        <button class="nav-tab" onclick="goTab('historial',this)">Historial</button>
+      </div>
+    </div>
+    <div class="nav-right">
+      <span class="vendor-chip" id="vendor-chip"></span>
+      <button class="btn-sm" onclick="doLogout()">Salir</button>
+    </div>
+  </nav>
+
+  <!-- mobile nav -->
+  <div class="mobile-nav">
+    <button class="nav-tab active" onclick="goTab('dashboard',this)">Dashboard</button>
+    <button class="nav-tab" onclick="goTab('venta',this)">Cargar venta</button>
+    <button class="nav-tab" onclick="goTab('stock',this)">Stock</button>
+    <button class="nav-tab" onclick="goTab('historial',this)">Historial</button>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="metrics" id="metrics"></div>
+      <div class="section-hd">
+        <h2>Ventas de hoy</h2>
+        <button class="btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th><th>Producto</th><th>Categoría</th>
+              <th>Moneda</th><th>Monto</th><th>Pago</th><th>Vendedor</th>
+            </tr>
+          </thead>
+          <tbody id="today-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CARGAR VENTA -->
+    <div class="tab-content" id="tab-venta">
+      <div class="form-card">
+        <h2>Nueva venta</h2>
+        <div class="field">
+          <label>Producto</label>
+          <input type="text" id="v-prod" placeholder="Ej: Remera oversize negra">
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Categoría</label>
+            <select id="v-cat">
+              <option value="Ropa">Ropa</option>
+              <option value="Accesorios">Accesorios</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Moneda</label>
+            <select id="v-cur">
+              <option value="ARS">ARS $</option>
+              <option value="USD">USD $</option>
+              <option value="BRL">BRL R$</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Monto</label>
+            <input type="number" id="v-amt" placeholder="0" min="0">
+          </div>
+          <div class="field">
+            <label>Método de pago</label>
+            <select id="v-met">
+              <option>Efectivo</option>
+              <option>Transferencia</option>
+              <option>Débito</option>
+              <option>Crédito</option>
+              <option>MercadoPago</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Nota (opcional)</label>
+          <input type="text" id="v-nota" placeholder="Ej: con descuento">
+        </div>
+        <p class="err" id="v-err"></p>
+        <button class="btn btn-green" id="v-btn" onclick="submitVenta()">Registrar venta</button>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div class="tab-content" id="tab-stock">
+      <div class="section-hd">
+        <h2>Control de stock</h2>
+        <button class="btn-sm" onclick="loadStock()">↻ Actualizar</button>
+      </div>
+      <div class="stock-cols" id="stock-cols">
+        <div class="loader"><div class="spinner"></div> Cargando...</div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="tab-content" id="tab-historial">
+      <div class="filters">
+        <select class="filter-sel" id="f-vend" onchange="loadHistorial()">
+          <option value="">Todos los vendedores</option>
+          <option value="Vendedor 1">Vendedor 1</option>
+          <option value="Vendedor 2">Vendedor 2</option>
+          <option value="Admin">Admin</option>
+        </select>
+        <select class="filter-sel" id="f-cat" onchange="loadHistorial()">
+          <option value="">Todas las categorías</option>
+          <option value="Ropa">Ropa</option>
+          <option value="Accesorios">Accesorios</option>
+        </select>
+        <select class="filter-sel" id="f-cur" onchange="loadHistorial()">
+          <option value="">Todas las monedas</option>
+          <option value="ARS">ARS</option>
+          <option value="USD">USD</option>
+          <option value="BRL">BRL</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Producto</th><th>Cat.</th>
+              <th>Moneda</th><th>Monto</th><th>Pago</th><th>Vendedor</th>
+            </tr>
+          </thead>
+          <tbody id="hist-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /screen-app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIGURACIÓN SUPABASE
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://wnaxkfnkhwveamrswwim.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nnJa7QKdYLiwxKEyvos9qg_YNRUU185';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════════
+//  USUARIOS (podés cambiarlos)
+// ══════════════════════════════════════════════
+const USERS = {
+  'vendedor1': { pass: 'pass1',   display: 'Vendedor 1' },
+  'vendedor2': { pass: 'pass2',   display: 'Vendedor 2' },
+  'admin':     { pass: 'admin123', display: 'Admin' }
+};
+
+let currentUser = null;
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function todayStr() {
+  return new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function nowTime() {
+  return new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+}
+function fmtMonto(cur, amt) {
+  if (cur === 'ARS') return '$' + Number(amt).toLocaleString('es-AR');
+  if (cur === 'USD') return 'U$D ' + Number(amt).toFixed(2);
+  if (cur === 'BRL') return 'R$ ' + Number(amt).toFixed(2);
+  return amt;
+}
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.className = 'toast', 3000);
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  LOGIN / LOGOUT
+// ══════════════════════════════════════════════
+document.getElementById('inp-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogin() {
+  const u = document.getElementById('inp-user').value.trim().toLowerCase();
+  const p = document.getElementById('inp-pass').value;
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+  if (!u || !p) { err.textContent = 'Completá los campos.'; return; }
+  if (USERS[u] && USERS[u].pass === p) {
+    currentUser = { id: u, display: USERS[u].display };
+    document.getElementById('vendor-chip').textContent = currentUser.display;
+    showScreen('screen-app');
+    loadDashboard();
+  } else {
+    err.textContent = 'Usuario o contraseña incorrectos.';
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+  showScreen('screen-login');
+}
+
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+function goTab(tab, btn) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  // mark all matching buttons (desktop + mobile)
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.getAttribute('onclick') === btn.getAttribute('onclick')) t.classList.add('active');
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'dashboard') loadDashboard();
+  if (tab === 'stock')     loadStock();
+  if (tab === 'historial') loadHistorial();
+}
+
+// ══════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════
+async function loadDashboard() {
+  const tbody = document.getElementById('today-tbody');
+  tbody.innerHTML = `<tr><td colspan="7" class="empty"><div class="loader"><div class="spinner"></div> Cargando...</div></td></tr>`;
+
+  const today = todayStr();
+  const { data, error } = await sb
+    .from('ventas')
+    .select('*')
+    .eq('fecha', today)
+    .order('created_at', { ascending: false });
+
+  if (error) { showToast('Error al cargar datos', 'fail'); return; }
+
+  // metrics
+  const totalARS = data.filter(s => s.moneda === 'ARS').reduce((a, b) => a + Number(b.monto), 0);
+  const totalUSD = data.filter(s => s.moneda === 'USD').reduce((a, b) => a + Number(b.monto), 0);
+  const ropa = data.filter(s => s.categoria === 'Ropa').length;
+  const accs = data.filter(s => s.categoria === 'Accesorios').length;
+
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">Ventas hoy</div>
+      <div class="metric-val">${data.length}</div>
+      <div class="metric-sub">total del día</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Ingresos ARS</div>
+      <div class="metric-val">$${totalARS.toLocaleString('es-AR')}</div>
+      <div class="metric-sub">pesos argentinos</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Ingresos USD</div>
+      <div class="metric-val">U$D ${totalUSD.toFixed(2)}</div>
+      <div class="metric-sub">dólares</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Ropa / Accesorios</div>
+      <div class="metric-val">${ropa} / ${accs}</div>
+      <div class="metric-sub">por categoría</div>
+    </div>
+  `;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">Sin ventas cargadas hoy.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td>${s.hora}</td>
+      <td>
+        ${s.producto}
+        ${s.nota ? `<br><span style="font-size:11px;color:var(--text3)">${s.nota}</span>` : ''}
+      </td>
+      <td><span class="tag ${s.categoria === 'Ropa' ? 'tag-ropa' : 'tag-accs'}">${s.categoria}</span></td>
+      <td><span class="tag tag-${s.moneda.toLowerCase()}">${s.moneda}</span></td>
+      <td style="font-weight:500">${fmtMonto(s.moneda, s.monto)}</td>
+      <td style="color:var(--text2)">${s.metodo}</td>
+      <td style="color:var(--text2)">${s.vendedor}</td>
+    </tr>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+//  CARGAR VENTA
+// ══════════════════════════════════════════════
+async function submitVenta() {
+  const prod = document.getElementById('v-prod').value.trim();
+  const cat  = document.getElementById('v-cat').value;
+  const cur  = document.getElementById('v-cur').value;
+  const amt  = parseFloat(document.getElementById('v-amt').value);
+  const met  = document.getElementById('v-met').value;
+  const nota = document.getElementById('v-nota').value.trim();
+  const err  = document.getElementById('v-err');
+  const btn  = document.getElementById('v-btn');
+  err.textContent = '';
+
+  if (!prod) { err.textContent = 'Ingresá el nombre del producto.'; return; }
+  if (!amt || amt <= 0) { err.textContent = 'Ingresá un monto válido.'; return; }
+
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
+  const { error } = await sb.from('ventas').insert([{
+    fecha: todayStr(),
+    hora: nowTime(),
+    producto: prod,
+    categoria: cat,
+    moneda: cur,
+    monto: amt,
+    metodo: met,
+    nota: nota || null,
+    vendedor: currentUser.display
+  }]);
+
+  btn.textContent = 'Registrar venta';
+  btn.disabled = false;
+
+  if (error) { err.textContent = 'Error al guardar. Intentá de nuevo.'; return; }
+
+  document.getElementById('v-prod').value = '';
+  document.getElementById('v-amt').value  = '';
+  document.getElementById('v-nota').value = '';
+  showToast('✓ Venta registrada', 'ok');
+}
+
+// ══════════════════════════════════════════════
+//  STOCK
+// ══════════════════════════════════════════════
+async function loadStock() {
+  const wrap = document.getElementById('stock-cols');
+  wrap.innerHTML = `<div class="loader"><div class="spinner"></div> Cargando...</div>`;
+
+  const { data, error } = await sb.from('stock').select('*').order('categoria').order('nombre');
+  if (error) { wrap.innerHTML = '<p style="color:var(--red);padding:16px">Error al cargar stock.</p>'; return; }
+
+  const cats = ['Ropa', 'Accesorios'];
+  wrap.innerHTML = cats.map(cat => {
+    const items = data.filter(i => i.categoria === cat);
+    return `
+      <div class="stock-box">
+        <h3>${cat}</h3>
+        ${items.map(item => `
+          <div class="stock-row">
+            <span class="stock-name">${item.nombre}</span>
+            <div class="stock-controls">
+              <button class="btn-qty" onclick="changeStock(${item.id}, -1)">−</button>
+              <span class="stock-qty ${item.cantidad <= 2 ? 'low' : ''}">${item.cantidad}</span>
+              <button class="btn-qty" onclick="changeStock(${item.id}, 1)">+</button>
+              <button class="btn-del" onclick="deleteStock(${item.id})" title="Eliminar">×</button>
+            </div>
+          </div>
+        `).join('')}
+        <div class="add-row">
+          <input type="text" id="new-${cat}" placeholder="Nuevo producto...">
+          <button class="btn-outline" onclick="addStock('${cat}')">Agregar</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function changeStock(id, delta) {
+  const { data } = await sb.from('stock').select('cantidad').eq('id', id).single();
+  const newQty = Math.max(0, data.cantidad + delta);
+  await sb.from('stock').update({ cantidad: newQty }).eq('id', id);
+  loadStock();
+}
+
+async function deleteStock(id) {
+  if (!confirm('¿Eliminar este producto del stock?')) return;
+  await sb.from('stock').delete().eq('id', id);
+  loadStock();
+}
+
+async function addStock(cat) {
+  const inp = document.getElementById('new-' + cat);
+  const name = inp.value.trim();
+  if (!name) return;
+  await sb.from('stock').insert([{ nombre: name, categoria: cat, cantidad: 0 }]);
+  inp.value = '';
+  loadStock();
+  showToast('Producto agregado', 'ok');
+}
+
+// ══════════════════════════════════════════════
+//  HISTORIAL
+// ══════════════════════════════════════════════
+async function loadHistorial() {
+  const tbody = document.getElementById('hist-tbody');
+  tbody.innerHTML = `<tr><td colspan="7" class="empty"><div class="loader"><div class="spinner"></div> Cargando...</div></td></tr>`;
+
+  const fv = document.getElementById('f-vend').value;
+  const fc = document.getElementById('f-cat').value;
+  const fm = document.getElementById('f-cur').value;
+
+  let q = sb.from('ventas').select('*').order('created_at', { ascending: false }).limit(200);
+  if (fv) q = q.eq('vendedor', fv);
+  if (fc) q = q.eq('categoria', fc);
+  if (fm) q = q.eq('moneda', fm);
+
+  const { data, error } = await q;
+  if (error) { showToast('Error al cargar historial', 'fail'); return; }
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">Sin ventas para mostrar.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td style="font-size:12px;color:var(--text2)">${s.fecha} ${s.hora}</td>
+      <td>
+        ${s.producto}
+        ${s.nota ? `<br><span style="font-size:11px;color:var(--text3)">${s.nota}</span>` : ''}
+      </td>
+      <td><span class="tag ${s.categoria === 'Ropa' ? 'tag-ropa' : 'tag-accs'}">${s.categoria}</span></td>
+      <td><span class="tag tag-${s.moneda.toLowerCase()}">${s.moneda}</span></td>
+      <td style="font-weight:500">${fmtMonto(s.moneda, s.monto)}</td>
+      <td style="color:var(--text2)">${s.metodo}</td>
+      <td style="color:var(--text2)">${s.vendedor}</td>
+    </tr>
+  `).join('');
+}
+</script>
+</body>
+</html>
