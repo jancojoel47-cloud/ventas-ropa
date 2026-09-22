@@ -1,244 +1,437 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VentaApp — Gestión de ventas</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VentaApp — Gestión de ventas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <!-- ═══ LOGIN ═══ -->
+    <!-- ═══ LOGIN ═══ -->
+    <div class="screen active" id="screen-login">
+      <div class="login-page">
+        <div class="login-box">
+          <div class="login-card">
+            <div class="login-logo">
+              <img src="logo.png" alt="Logo de VentaApp" />
+            </div>
 
-<!-- ═══ LOGIN ═══ -->
-<div class="screen active" id="screen-login">
-  <div class="login-page">
-    <div class="login-box">
-      <div class="login-brand">
-        <h1>Venta<span>App</span></h1>
-        <p>Sistema de ventas — ropa &amp; accesorios</p>
-      </div>
-      <div class="login-card">
-        <div class="field">
-          <label>Usuario</label>
-          <input type="text" id="inp-user" placeholder="Tu nombre de usuario" autocomplete="username">
-        </div>
-        <div class="field">
-          <label>Contraseña</label>
-          <div class="pass-wrap">
-            <input type="password" id="inp-pass" placeholder="••••••" autocomplete="current-password">
-            <button type="button" class="btn-eye" onclick="togglePass('inp-pass', this)" title="Mostrar contraseña">
-              <svg id="eye-show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <svg id="eye-hide" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-            </button>
+            <div class="login-brand">
+              <h1>ORUS<span>App</span></h1>
+              <p>Sistema de gestión de ventas</p>
+            </div>
+
+            <div class="field">
+              <label for="inp-user">Usuario</label>
+              <input
+                type="text"
+                id="inp-user"
+                placeholder="Ingresá tu usuario"
+                autocomplete="username"
+              />
+            </div>
+
+            <div class="field">
+              <label for="inp-pass">Contraseña</label>
+
+              <div class="pass-wrap">
+                <input
+                  type="password"
+                  id="inp-pass"
+                  placeholder="Ingresá tu contraseña"
+                  autocomplete="current-password"
+                />
+
+                <button
+                  type="button"
+                  class="btn-eye"
+                  onclick="togglePass('inp-pass', this)"
+                  title="Mostrar contraseña"
+                >
+                  <svg
+                    id="eye-show"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+
+                  <svg
+                    id="eye-hide"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    style="display: none"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <p class="err" id="login-err"></p>
+
+            <button class="btn btn-accent" onclick="doLogin()">Entrar</button>
+
+            <div class="login-footer">Acceso privado · VentaApp</div>
           </div>
         </div>
-        <p class="err" id="login-err"></p>
-        <button class="btn btn-accent" onclick="doLogin()">Entrar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ APP ═══ -->
-<div class="screen" id="screen-app">
-
-  <nav class="navbar">
-    <div class="nav-left">
-      <span class="nav-brand">Venta<span>App</span></span>
-      <div class="nav-tabs">
-        <button class="nav-tab active" onclick="goTab('dashboard',this)">Dashboard</button>
-        <button class="nav-tab" onclick="goTab('venta',this)">Cargar venta</button>
-        <button class="nav-tab" onclick="goTab('stock',this)">Stock</button>
-        <button class="nav-tab" onclick="goTab('historial',this)">Historial</button>
-        <button class="nav-tab" id="tab-btn-usuarios" style="display:none" onclick="goTab('usuarios',this)">Usuarios</button>
-      </div>
-    </div>
-    <div class="nav-right">
-      <span class="vendor-chip" id="vendor-chip"></span>
-      <button class="btn-sm" onclick="doLogout()">Salir</button>
-    </div>
-  </nav>
-
-  <!-- mobile nav -->
-  <div class="mobile-nav">
-    <button class="nav-tab active" onclick="goTab('dashboard',this)">Dashboard</button>
-    <button class="nav-tab" onclick="goTab('venta',this)">Cargar venta</button>
-    <button class="nav-tab" onclick="goTab('stock',this)">Stock</button>
-    <button class="nav-tab" onclick="goTab('historial',this)">Historial</button>
-    <button class="nav-tab" id="mob-tab-btn-usuarios" style="display:none" onclick="goTab('usuarios',this)">Usuarios</button>
-  </div>
-
-  <div class="main">
-
-    <!-- DASHBOARD -->
-    <div class="tab-content active" id="tab-dashboard">
-      <div class="metrics" id="metrics"></div>
-      <div class="section-hd">
-        <h2>Ventas de hoy</h2>
-        <button class="btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Hora</th><th>Producto</th><th>Categoría</th>
-              <th>Moneda</th><th>Monto</th><th>Pago</th><th>Vendedor</th>
-            </tr>
-          </thead>
-          <tbody id="today-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- CARGAR VENTA -->
-    <div class="tab-content" id="tab-venta">
-      <div class="form-card">
-        <h2>Nueva venta</h2>
-        <div class="field">
-          <label>Producto</label>
-          <input type="text" id="v-prod" placeholder="Ej: Remera oversize negra">
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Categoría</label>
-            <select id="v-cat">
-              <option value="Ropa">Ropa</option>
-              <option value="Accesorios">Accesorios</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Moneda</label>
-            <select id="v-cur">
-              <option value="ARS">ARS $</option>
-              <option value="USD">USD $</option>
-              <option value="BRL">BRL R$</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Monto</label>
-            <input type="number" id="v-amt" placeholder="0" min="0">
-          </div>
-          <div class="field">
-            <label>Método de pago</label>
-            <select id="v-met">
-              <option>Efectivo</option>
-              <option>Transferencia</option>
-              <option>Débito</option>
-              <option>Crédito</option>
-              <option>MercadoPago</option>
-            </select>
-          </div>
-        </div>
-        <div class="field">
-          <label>Nota (opcional)</label>
-          <input type="text" id="v-nota" placeholder="Ej: con descuento">
-        </div>
-        <p class="err" id="v-err"></p>
-        <button class="btn btn-green" id="v-btn" onclick="submitVenta()">Registrar venta</button>
       </div>
     </div>
 
-    <!-- STOCK -->
-    <div class="tab-content" id="tab-stock">
-      <div class="section-hd">
-        <h2>Control de stock</h2>
-        <button class="btn-sm" onclick="loadStock()">↻ Actualizar</button>
-      </div>
-      <div class="stock-cols" id="stock-cols">
-        <div class="loader"><div class="spinner"></div> Cargando...</div>
-      </div>
-    </div>
-
-    <!-- HISTORIAL -->
-    <div class="tab-content" id="tab-historial">
-      <div class="filters">
-        <select class="filter-sel" id="f-vend" onchange="loadHistorial()">
-          <option value="">Todos los vendedores</option>
-          <option value="Vendedor 1">Vendedor 1</option>
-          <option value="Vendedor 2">Vendedor 2</option>
-          <option value="Admin">Admin</option>
-        </select>
-        <select class="filter-sel" id="f-cat" onchange="loadHistorial()">
-          <option value="">Todas las categorías</option>
-          <option value="Ropa">Ropa</option>
-          <option value="Accesorios">Accesorios</option>
-        </select>
-        <select class="filter-sel" id="f-cur" onchange="loadHistorial()">
-          <option value="">Todas las monedas</option>
-          <option value="ARS">ARS</option>
-          <option value="USD">USD</option>
-          <option value="BRL">BRL</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th><th>Producto</th><th>Cat.</th>
-              <th>Moneda</th><th>Monto</th><th>Pago</th><th>Vendedor</th>
-            </tr>
-          </thead>
-          <tbody id="hist-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- USUARIOS (solo admin) -->
-    <div class="tab-content" id="tab-usuarios">
-      <div class="section-hd">
-        <h2>Usuarios del sistema</h2>
-        <button class="btn-sm" onclick="loadUsuarios()">↻ Actualizar</button>
-      </div>
-      <div class="users-grid" id="users-grid">
-        <div class="loader"><div class="spinner"></div> Cargando...</div>
-      </div>
-
-      <div class="form-card" style="margin-top:8px">
-        <h2>Crear usuario nuevo</h2>
-        <div class="form-row">
-          <div class="field">
-            <label>Nombre</label>
-            <input type="text" id="u-nombre" placeholder="Ej: María">
-          </div>
-          <div class="field">
-            <label>Usuario</label>
-            <input type="text" id="u-usuario" placeholder="Ej: maria123">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Contraseña</label>
-            <div class="pass-wrap">
-              <input type="password" id="u-pass" placeholder="••••••">
-              <button type="button" class="btn-eye" onclick="togglePass('u-pass', this)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              </button>
+    <!-- ═══ APP ═══ -->
+    <div class="screen" id="screen-app">
+      <div class="app-shell">
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <img src="logo.png" alt="Logo de VentaApp" />
+            <div>
+              <strong>ORUS<span>App</span></strong>
+              <small>Panel de gestión</small>
             </div>
           </div>
-          <div class="field">
-            <label>Rol</label>
-            <select id="u-rol">
-              <option value="vendedor">Vendedor</option>
-              <option value="admin">Admin</option>
-            </select>
+
+          <nav class="sidebar-nav">
+            <p class="nav-caption">MENÚ PRINCIPAL</p>
+            <button class="nav-tab active" onclick="goTab('dashboard', this)">
+              <span class="nav-icon">⌂</span> Dashboard
+            </button>
+            <button class="nav-tab" onclick="goTab('venta', this)">
+              <span class="nav-icon">＋</span> Cargar venta
+            </button>
+            <button class="nav-tab" onclick="goTab('stock', this)">
+              <span class="nav-icon">▦</span> Stock
+            </button>
+            <button class="nav-tab" onclick="goTab('historial', this)">
+              <span class="nav-icon">↺</span> Historial
+            </button>
+            <button class="nav-tab" onclick="goTab('historial', this)">
+              <span class="nav-icon">↺</span> Historial
+            </button>
+            <button class="nav-tab" onclick="goTab('cubitos', this)">
+              Cubitos
+            </button>
+            <button
+              class="nav-tab"
+              id="tab-btn-usuarios"
+              style="display: none"
+              onclick="goTab('usuarios', this)"
+            >
+              <span class="nav-icon">♙</span> Usuarios
+            </button>
+          </nav>
+
+          <div class="sidebar-bottom">
+            <div class="sidebar-user">
+              <div class="user-avatar">V</div>
+              <div>
+                <strong id="sidebar-user-name">Usuario</strong>
+                <small>Sesión activa</small>
+              </div>
+            </div>
+            <button class="logout-btn" onclick="doLogout()">
+              ↪ Cerrar sesión
+            </button>
           </div>
-        </div>
-        <p class="err" id="u-err"></p>
-        <button class="btn btn-accent" id="u-btn" onclick="crearUsuario()">Crear usuario</button>
+        </aside>
+
+        <main class="app-content">
+          <header class="content-header">
+            <div>
+              <p class="eyebrow">PANEL DE CONTROL</p>
+              <h1>Resumen general</h1>
+              <p class="header-subtitle">
+                Gestioná tus ventas, stock y movimientos.
+              </p>
+            </div>
+            <div class="header-user">
+              <span class="status-dot"></span>
+              <span id="vendor-chip"></span>
+            </div>
+          </header>
+
+          <div class="mobile-nav">
+            <button class="nav-tab active" onclick="goTab('dashboard', this)">
+              Dashboard
+            </button>
+            <button class="nav-tab" onclick="goTab('venta', this)">
+              Venta
+            </button>
+            <button class="nav-tab" onclick="goTab('stock', this)">
+              Stock
+            </button>
+            <button class="nav-tab" onclick="goTab('historial', this)">
+              Historial
+            </button>
+            <button
+              class="nav-tab"
+              id="mob-tab-btn-usuarios"
+              style="display: none"
+              onclick="goTab('usuarios', this)"
+            >
+              Usuarios
+            </button>
+          </div>
+
+          <section class="tab-content active" id="tab-dashboard">
+            <div class="metrics" id="metrics"></div>
+            <div class="section-hd">
+              <div>
+                <p class="eyebrow">ACTIVIDAD RECIENTE</p>
+                <h2>Ventas de hoy</h2>
+              </div>
+              <button class="btn-sm" onclick="loadDashboard()">
+                ↻ Actualizar
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th>Producto</th>
+                    <th>*ía</th>
+                    <th>Moneda</th>
+                    <th>Monto</th>
+                    <th>Pago</th>
+                    <th>Vendedor</th>
+                  </tr>
+                </thead>
+                <tbody id="today-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="tab-content" id="tab-venta">
+            <div class="page-title">
+              <p class="eyebrow">OPERACIONES</p>
+              <h2>Nueva venta</h2>
+              <p>Registrá una nueva operación en el sistema.</p>
+            </div>
+            <div class="form-card">
+              <h2>Datos de la venta</h2>
+              <div class="field">
+                <label>Producto</label>
+                <select id="v-prod">
+                  <option value="">Cargando productos...</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Cantidad</label>
+                <input
+                  type="number"
+                  id="v-cantidad"
+                  value="1"
+                  min="1"
+                  step="1"
+                />
+                <small id="v-stock-info" style="color: var(--text3)"
+                  >Seleccioná un producto</small
+                >
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label>Categoría</label
+                  ><select id="v-cat">
+                    <option value="Ropa">Ropa</option>
+                    <option value="Accesorios">Accesorios</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Moneda</label
+                  ><select id="v-cur">
+                    <option value="ARS">ARS $</option>
+                    <option value="USD">USD $</option>
+                    <option value="BRL">BRL R$</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label>Monto</label
+                  ><input type="number" id="v-amt" placeholder="0" min="0" />
+                </div>
+                <div class="field">
+                  <label>Método de pago</label
+                  ><select id="v-met">
+                    <option>Efectivo</option>
+                    <option>Transferencia</option>
+                    <option>Débito</option>
+                    <option>Crédito</option>
+                    <option>MercadoPago</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label>Nota opcional</label
+                ><input
+                  type="text"
+                  id="v-nota"
+                  placeholder="Ej: con descuento"
+                />
+              </div>
+              <p class="err" id="v-err"></p>
+              <button class="btn btn-green" id="v-btn" onclick="submitVenta()">
+                Registrar venta
+              </button>
+            </div>
+          </section>
+
+          <section class="tab-content" id="tab-stock">
+            <div class="section-hd">
+              <div>
+                <p class="eyebrow">INVENTARIO</p>
+                <h2>Control de stock</h2>
+              </div>
+              <button class="btn-sm" onclick="loadStock()">↻ Actualizar</button>
+            </div>
+            <div class="stock-cols" id="stock-cols">
+              <div class="loader">
+                <div class="spinner"></div>
+                Cargando...
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-content" id="tab-historial">
+            <div class="page-title">
+              <p class="eyebrow">REGISTROS</p>
+              <h2>Historial de ventas</h2>
+              <p>Consultá y filtrá todas las operaciones.</p>
+            </div>
+            <div class="filters">
+              <select class="filter-sel" id="f-vend" onchange="loadHistorial()">
+                <option value="">Todos los vendedores</option>
+                <option value="Vendedor 1">Vendedor 1</option>
+                <option value="Vendedor 2">Vendedor 2</option>
+                <option value="Admin">Admin</option></select
+              ><select class="filter-sel" id="f-cat" onchange="loadHistorial()">
+                <option value="">Todas las categorías</option>
+                <option value="Ropa">Ropa</option>
+                <option value="Accesorios">Accesorios</option></select
+              ><select class="filter-sel" id="f-cur" onchange="loadHistorial()">
+                <option value="">Todas las monedas</option>
+                <option value="ARS">ARS</option>
+                <option value="USD">USD</option>
+                <option value="BRL">BRL</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>Cat.</th>
+                    <th>Moneda</th>
+                    <th>Monto</th>
+                    <th>Pago</th>
+                    <th>Vendedor</th>
+                  </tr>
+                </thead>
+                <tbody id="hist-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="tab-content" id="tab-usuarios">
+            <div class="section-hd">
+              <div>
+                <p class="eyebrow">ADMINISTRACIÓN</p>
+                <h2>Usuarios del sistema</h2>
+              </div>
+              <button class="btn-sm" onclick="loadUsuarios()">
+                ↻ Actualizar
+              </button>
+            </div>
+            <div class="users-grid" id="users-grid">
+              <div class="loader">
+                <div class="spinner"></div>
+                Cargando...
+              </div>
+            </div>
+            <div class="form-card">
+              <h2>Crear usuario nuevo</h2>
+              <div class="form-row">
+                <div class="field">
+                  <label>Nombre</label
+                  ><input type="text" id="u-nombre" placeholder="Ej: María" />
+                </div>
+                <div class="field">
+                  <label>Usuario</label
+                  ><input
+                    type="text"
+                    id="u-usuario"
+                    placeholder="Ej: maria123"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label>Contraseña</label>
+                  <div class="pass-wrap">
+                    <input
+                      type="password"
+                      id="u-pass"
+                      placeholder="••••••"
+                    /><button
+                      type="button"
+                      class="btn-eye"
+                      onclick="togglePass('u-pass', this)"
+                    >
+                      ◉
+                    </button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Rol</label
+                  ><select id="u-rol">
+                    <option value="vendedor">Vendedor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <p class="err" id="u-err"></p>
+              <button
+                class="btn btn-accent"
+                id="u-btn"
+                onclick="crearUsuario()"
+              >
+                Crear usuario
+              </button>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
 
-  </div><!-- /main -->
-</div><!-- /screen-app -->
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-  <script src="app.js" defer></script>
-</body>
+    <script src="app.js" defer></script>
+  </body>
 </html>

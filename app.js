@@ -1,317 +1,911 @@
 // ══════════════════════════════════════════════
-//  CONFIGURACIÓN SUPABASE
+// CONFIGURACIÓN SUPABASE
 // ══════════════════════════════════════════════
+
 const SUPABASE_URL = 'https://wnaxkfnkhwveamrswwim.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_nnJa7QKdYLiwxKEyvos9qg_YNRUU185';
+
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 
 // ══════════════════════════════════════════════
-//  UTILS
+// UTILIDADES
 // ══════════════════════════════════════════════
+
 function todayStr() {
-  return new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  return new Date().toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 }
+
 function nowTime() {
-  return new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  return new Date().toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
+
 function fmtMonto(cur, amt) {
-  if (cur === 'ARS') return '$' + Number(amt).toLocaleString('es-AR');
-  if (cur === 'USD') return 'U$D ' + Number(amt).toFixed(2);
-  if (cur === 'BRL') return 'R$ ' + Number(amt).toFixed(2);
+  if (cur === 'ARS') {
+    return '$' + Number(amt).toLocaleString('es-AR');
+  }
+
+  if (cur === 'USD') {
+    return 'U$D ' + Number(amt).toFixed(2);
+  }
+
+  if (cur === 'BRL') {
+    return 'R$ ' + Number(amt).toFixed(2);
+  }
+
   return amt;
 }
+
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function showToast(msg, type = 'ok') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast ' + type + ' show';
-  setTimeout(() => t.className = 'toast', 3000);
+  const toast = document.getElementById('toast');
+
+  if (!toast) return;
+
+  toast.textContent = msg;
+  toast.className = 'toast ' + type + ' show';
+
+  setTimeout(() => {
+    toast.className = 'toast';
+  }, 3000);
 }
+
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+  document.querySelectorAll('.screen').forEach(screen => {
+    screen.classList.remove('active');
+  });
 
-// ══════════════════════════════════════════════
-//  LOGIN / LOGOUT
-// ══════════════════════════════════════════════
-document.getElementById('inp-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+  const screen = document.getElementById(id);
 
-// ── MOSTRAR/OCULTAR CONTRASEÑA ──
-function togglePass(inputId, btn) {
-  const inp = document.getElementById(inputId);
-  const svgs = btn.querySelectorAll('svg');
-  if (inp.type === 'password') {
-    inp.type = 'text';
-    svgs[0].style.display = 'none';
-    svgs[1].style.display = 'block';
-  } else {
-    inp.type = 'password';
-    svgs[0].style.display = 'block';
-    svgs[1].style.display = 'none';
+  if (screen) {
+    screen.classList.add('active');
   }
 }
 
-// ── LOGIN CON SUPABASE ──
-async function doLogin() {
-  const u = document.getElementById('inp-user').value.trim().toLowerCase();
-  const p = document.getElementById('inp-pass').value;
-  const err = document.getElementById('login-err');
-  const btn = document.querySelector('#screen-login .btn-accent');
-  err.textContent = '';
-  if (!u || !p) { err.textContent = 'Completá los campos.'; return; }
+// ══════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════
 
-  btn.textContent = 'Entrando...';
-  btn.disabled = true;
+const passInput = document.getElementById('inp-pass');
+
+if (passInput) {
+  passInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      doLogin();
+    }
+  });
+}
+
+function togglePass(inputId, btn) {
+  const input = document.getElementById(inputId);
+
+  if (!input) return;
+
+  const svgs = btn ? btn.querySelectorAll('svg') : [];
+
+  if (input.type === 'password') {
+    input.type = 'text';
+
+    if (svgs[0]) svgs[0].style.display = 'none';
+    if (svgs[1]) svgs[1].style.display = 'block';
+  } else {
+    input.type = 'password';
+
+    if (svgs[0]) svgs[0].style.display = 'block';
+    if (svgs[1]) svgs[1].style.display = 'none';
+  }
+}
+
+async function doLogin() {
+  const userInput = document.getElementById('inp-user');
+  const passwordInput = document.getElementById('inp-pass');
+  const errorText = document.getElementById('login-err');
+  const button = document.querySelector('#screen-login .btn-accent');
+
+  if (!userInput || !passwordInput) return;
+
+  const username = userInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+
+  if (errorText) {
+    errorText.textContent = '';
+  }
+
+  if (!username || !password) {
+    if (errorText) {
+      errorText.textContent = 'Completá los campos.';
+    }
+
+    return;
+  }
+
+  if (button) {
+    button.textContent = 'Entrando...';
+    button.disabled = true;
+  }
 
   const { data, error } = await sb
     .from('usuarios')
     .select('*')
-    .eq('usuario', u)
-    .eq('password', p)
+    .eq('usuario', username)
+    .eq('password', password)
     .single();
 
-  btn.textContent = 'Entrar';
-  btn.disabled = false;
+  if (button) {
+    button.textContent = 'Entrar';
+    button.disabled = false;
+  }
 
   if (error || !data) {
-    err.textContent = 'Usuario o contraseña incorrectos.';
+    if (errorText) {
+      errorText.textContent = 'Usuario o contraseña incorrectos.';
+    }
+
     return;
   }
 
-  currentUser = { id: data.id, usuario: data.usuario, display: data.nombre, rol: data.rol };
-  document.getElementById('vendor-chip').textContent = currentUser.display;
+  currentUser = {
+    id: data.id,
+    usuario: data.usuario,
+    display: data.nombre,
+    rol: data.rol
+  };
 
-  // Mostrar tab Usuarios solo si es admin
+  const vendorChip = document.getElementById('vendor-chip');
+
+  if (vendorChip) {
+    vendorChip.textContent = currentUser.display;
+  }
+
+  const sidebarUserName = document.getElementById('sidebar-user-name');
+
+  if (sidebarUserName) {
+    sidebarUserName.textContent = currentUser.display;
+  }
+
   const esAdmin = currentUser.rol === 'admin';
-  document.getElementById('tab-btn-usuarios').style.display = esAdmin ? 'inline-block' : 'none';
-  document.getElementById('mob-tab-btn-usuarios').style.display = esAdmin ? 'inline-block' : 'none';
+
+  const usuariosTab = document.getElementById('tab-btn-usuarios');
+  const usuariosMobileTab = document.getElementById('mob-tab-btn-usuarios');
+
+  if (usuariosTab) {
+    usuariosTab.style.display = esAdmin ? 'inline-block' : 'none';
+  }
+
+  if (usuariosMobileTab) {
+    usuariosMobileTab.style.display = esAdmin ? 'inline-block' : 'none';
+  }
 
   showScreen('screen-app');
-  loadDashboard();
+
+  await loadProductOptions();
+  await loadDashboard();
 }
 
-// ── USUARIOS (admin) ──
+function doLogout() {
+  currentUser = null;
+
+  const userInput = document.getElementById('inp-user');
+  const passwordInput = document.getElementById('inp-pass');
+
+  if (userInput) userInput.value = '';
+  if (passwordInput) passwordInput.value = '';
+
+  showScreen('screen-login');
+}
+
+// ══════════════════════════════════════════════
+// USUARIOS
+// ══════════════════════════════════════════════
+
 async function loadUsuarios() {
   const grid = document.getElementById('users-grid');
-  grid.innerHTML = `<div class="loader"><div class="spinner"></div> Cargando...</div>`;
-  const { data, error } = await sb.from('usuarios').select('*').order('created_at');
-  if (error) { grid.innerHTML = '<p style="color:var(--red);padding:16px">Error al cargar usuarios.</p>'; return; }
-  grid.innerHTML = data.map(u => `
+
+  if (!grid) return;
+
+  grid.innerHTML = `
+    <div class="loader">
+      <div class="spinner"></div>
+      Cargando...
+    </div>
+  `;
+
+  const { data, error } = await sb
+    .from('usuarios')
+    .select('*')
+    .order('created_at');
+
+  if (error) {
+    grid.innerHTML = `
+      <p style="color:var(--red);padding:16px">
+        Error al cargar usuarios.
+      </p>
+    `;
+
+    console.error(error);
+    return;
+  }
+
+  if (!data || !data.length) {
+    grid.innerHTML = '<p>No hay usuarios cargados.</p>';
+    return;
+  }
+
+  grid.innerHTML = data.map(user => `
     <div class="user-card">
       <div class="user-info">
-        <span class="user-name">${u.nombre}</span>
-        <span class="user-meta">@${u.usuario}</span>
-        <span class="tag ${u.rol === 'admin' ? 'tag-admin' : 'tag-vendedor'}" style="margin-top:4px;width:fit-content">${u.rol}</span>
+        <span class="user-name">
+          ${escapeHTML(user.nombre)}
+        </span>
+
+        <span class="user-meta">
+          @${escapeHTML(user.usuario)}
+        </span>
+
+        <span
+          class="tag ${
+            user.rol === 'admin'
+              ? 'tag-admin'
+              : 'tag-vendedor'
+          }"
+          style="margin-top:4px;width:fit-content"
+        >
+          ${escapeHTML(user.rol)}
+        </span>
       </div>
-      ${u.usuario !== 'admin' ? `<button class="btn-del-user" onclick="deleteUsuario(${u.id}, '${u.nombre}')" title="Eliminar">×</button>` : ''}
+
+      ${
+        user.usuario !== 'admin'
+          ? `
+            <button
+              class="btn-del-user"
+              onclick="deleteUsuario(${user.id}, '${escapeHTML(user.nombre)}')"
+              title="Eliminar"
+            >
+              ×
+            </button>
+          `
+          : ''
+      }
     </div>
   `).join('');
 }
 
 async function crearUsuario() {
-  const nombre  = document.getElementById('u-nombre').value.trim();
-  const usuario = document.getElementById('u-usuario').value.trim().toLowerCase();
-  const pass    = document.getElementById('u-pass').value;
-  const rol     = document.getElementById('u-rol').value;
-  const err     = document.getElementById('u-err');
-  const btn     = document.getElementById('u-btn');
-  err.textContent = '';
-  if (!nombre || !usuario || !pass) { err.textContent = 'Completá todos los campos.'; return; }
-  if (pass.length < 4) { err.textContent = 'La contraseña debe tener al menos 4 caracteres.'; return; }
+  const nombreInput = document.getElementById('u-nombre');
+  const usuarioInput = document.getElementById('u-usuario');
+  const passwordInput = document.getElementById('u-pass');
+  const rolInput = document.getElementById('u-rol');
+  const errorText = document.getElementById('u-err');
+  const button = document.getElementById('u-btn');
 
-  btn.textContent = 'Creando...';
-  btn.disabled = true;
-
-  const { error } = await sb.from('usuarios').insert([{ nombre, usuario, password: pass, rol }]);
-
-  btn.textContent = 'Crear usuario';
-  btn.disabled = false;
-
-  if (error) {
-    err.textContent = error.code === '23505' ? 'Ese nombre de usuario ya existe.' : 'Error al crear usuario.';
+  if (!nombreInput || !usuarioInput || !passwordInput || !rolInput) {
     return;
   }
 
-  document.getElementById('u-nombre').value = '';
-  document.getElementById('u-usuario').value = '';
-  document.getElementById('u-pass').value = '';
+  const nombre = nombreInput.value.trim();
+  const usuario = usuarioInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+  const rol = rolInput.value;
+
+  if (errorText) {
+    errorText.textContent = '';
+  }
+
+  if (!nombre || !usuario || !password) {
+    if (errorText) {
+      errorText.textContent = 'Completá todos los campos.';
+    }
+
+    return;
+  }
+
+  if (password.length < 4) {
+    if (errorText) {
+      errorText.textContent =
+        'La contraseña debe tener al menos 4 caracteres.';
+    }
+
+    return;
+  }
+
+  if (button) {
+    button.textContent = 'Creando...';
+    button.disabled = true;
+  }
+
+  const { error } = await sb
+    .from('usuarios')
+    .insert([{
+      nombre,
+      usuario,
+      password,
+      rol
+    }]);
+
+  if (button) {
+    button.textContent = 'Crear usuario';
+    button.disabled = false;
+  }
+
+  if (error) {
+    if (errorText) {
+      errorText.textContent =
+        error.code === '23505'
+          ? 'Ese nombre de usuario ya existe.'
+          : 'Error al crear usuario.';
+    }
+
+    console.error(error);
+    return;
+  }
+
+  nombreInput.value = '';
+  usuarioInput.value = '';
+  passwordInput.value = '';
+
   showToast('✓ Usuario creado', 'ok');
-  loadUsuarios();
+
+  await loadUsuarios();
 }
 
 async function deleteUsuario(id, nombre) {
-  if (!confirm(`¿Eliminar al usuario "${nombre}"?`)) return;
-  await sb.from('usuarios').delete().eq('id', id);
+  if (!confirm(`¿Eliminar al usuario "${nombre}"?`)) {
+    return;
+  }
+
+  const { error } = await sb
+    .from('usuarios')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    showToast('No se pudo eliminar el usuario', 'fail');
+    console.error(error);
+    return;
+  }
+
   showToast('Usuario eliminado', 'ok');
-  loadUsuarios();
-}
 
-function doLogout() {
-  currentUser = null;
-  document.getElementById('inp-user').value = '';
-  document.getElementById('inp-pass').value = '';
-  showScreen('screen-login');
+  await loadUsuarios();
 }
 
 // ══════════════════════════════════════════════
-//  TABS
+// NAVEGACIÓN
 // ══════════════════════════════════════════════
+
 function goTab(tab, btn) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  // mark all matching buttons (desktop + mobile)
-  document.querySelectorAll('.nav-tab').forEach(t => {
-    if (t.getAttribute('onclick') === btn.getAttribute('onclick')) t.classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(tabButton => {
+    tabButton.classList.remove('active');
   });
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+
+  if (btn) {
+    btn.classList.add('active');
+  }
+
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+
+  const selectedTab = document.getElementById('tab-' + tab);
+
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+
   if (tab === 'dashboard') loadDashboard();
-  if (tab === 'stock')     loadStock();
+  if (tab === 'stock') loadStock();
   if (tab === 'historial') loadHistorial();
-  if (tab === 'usuarios')  loadUsuarios();
+  if (tab === 'usuarios') loadUsuarios();
 }
 
 // ══════════════════════════════════════════════
-//  DASHBOARD
+// DASHBOARD
 // ══════════════════════════════════════════════
+
 async function loadDashboard() {
   const tbody = document.getElementById('today-tbody');
-  tbody.innerHTML = `<tr><td colspan="7" class="empty"><div class="loader"><div class="spinner"></div> Cargando...</div></td></tr>`;
 
-  const today = todayStr();
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" class="empty">
+        <div class="loader">
+          <div class="spinner"></div>
+          Cargando...
+        </div>
+      </td>
+    </tr>
+  `;
+
   const { data, error } = await sb
     .from('ventas')
     .select('*')
-    .eq('fecha', today)
+    .eq('fecha', todayStr())
     .order('created_at', { ascending: false });
 
-  if (error) { showToast('Error al cargar datos', 'fail'); return; }
-
-  // metrics
-  const totalARS = data.filter(s => s.moneda === 'ARS').reduce((a, b) => a + Number(b.monto), 0);
-  const totalUSD = data.filter(s => s.moneda === 'USD').reduce((a, b) => a + Number(b.monto), 0);
-  const ropa = data.filter(s => s.categoria === 'Ropa').length;
-  const accs = data.filter(s => s.categoria === 'Accesorios').length;
-
-  document.getElementById('metrics').innerHTML = `
-    <div class="metric-card">
-      <div class="metric-label">Ventas hoy</div>
-      <div class="metric-val">${data.length}</div>
-      <div class="metric-sub">total del día</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Ingresos ARS</div>
-      <div class="metric-val">$${totalARS.toLocaleString('es-AR')}</div>
-      <div class="metric-sub">pesos argentinos</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Ingresos USD</div>
-      <div class="metric-val">U$D ${totalUSD.toFixed(2)}</div>
-      <div class="metric-sub">dólares</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Ropa / Accesorios</div>
-      <div class="metric-val">${ropa} / ${accs}</div>
-      <div class="metric-sub">por categoría</div>
-    </div>
-  `;
-
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">Sin ventas cargadas hoy.</td></tr>`;
+  if (error) {
+    showToast('Error al cargar datos', 'fail');
+    console.error(error);
     return;
   }
-  tbody.innerHTML = data.map(s => `
+
+  const ventas = data || [];
+
+  const totalARS = ventas
+    .filter(sale => sale.moneda === 'ARS')
+    .reduce((total, sale) => total + Number(sale.monto), 0);
+
+  const totalUSD = ventas
+    .filter(sale => sale.moneda === 'USD')
+    .reduce((total, sale) => total + Number(sale.monto), 0);
+
+  const ropa = ventas.filter(
+    sale => sale.categoria === 'Ropa'
+  ).length;
+
+  const accesorios = ventas.filter(
+    sale => sale.categoria === 'Accesorios'
+  ).length;
+
+  const metrics = document.getElementById('metrics');
+
+  if (metrics) {
+    metrics.innerHTML = `
+      <div class="metric-card">
+        <div class="metric-label">Ventas hoy</div>
+        <div class="metric-val">${ventas.length}</div>
+        <div class="metric-sub">total del día</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Ingresos ARS</div>
+        <div class="metric-val">
+          $${totalARS.toLocaleString('es-AR')}
+        </div>
+        <div class="metric-sub">pesos argentinos</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Ingresos USD</div>
+        <div class="metric-val">
+          U$D ${totalUSD.toFixed(2)}
+        </div>
+        <div class="metric-sub">dólares</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Ropa / Accesorios</div>
+        <div class="metric-val">
+          ${ropa} / ${accesorios}
+        </div>
+        <div class="metric-sub">por categoría</div>
+      </div>
+    `;
+  }
+
+  if (!ventas.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty">
+          Sin ventas cargadas hoy.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  tbody.innerHTML = ventas.map(sale => `
     <tr>
-      <td>${s.hora}</td>
+      <td>${escapeHTML(sale.hora)}</td>
+
       <td>
-        ${s.producto}
-        ${s.nota ? `<br><span style="font-size:11px;color:var(--text3)">${s.nota}</span>` : ''}
+        ${escapeHTML(sale.producto)}
+
+        ${
+          sale.cantidad
+            ? `<br><small>Cantidad: ${sale.cantidad}</small>`
+            : ''
+        }
+
+        ${
+          sale.nota
+            ? `
+              <br>
+              <span style="font-size:11px;color:var(--text3)">
+                ${escapeHTML(sale.nota)}
+              </span>
+            `
+            : ''
+        }
       </td>
-      <td><span class="tag ${s.categoria === 'Ropa' ? 'tag-ropa' : 'tag-accs'}">${s.categoria}</span></td>
-      <td><span class="tag tag-${s.moneda.toLowerCase()}">${s.moneda}</span></td>
-      <td style="font-weight:500">${fmtMonto(s.moneda, s.monto)}</td>
-      <td style="color:var(--text2)">${s.metodo}</td>
-      <td style="color:var(--text2)">${s.vendedor}</td>
+
+      <td>
+        <span class="tag ${
+          sale.categoria === 'Ropa'
+            ? 'tag-ropa'
+            : 'tag-accs'
+        }">
+          ${escapeHTML(sale.categoria)}
+        </span>
+      </td>
+
+      <td>
+        <span class="tag tag-${String(sale.moneda).toLowerCase()}">
+          ${escapeHTML(sale.moneda)}
+        </span>
+      </td>
+
+      <td style="font-weight:500">
+        ${fmtMonto(sale.moneda, sale.monto)}
+      </td>
+
+      <td style="color:var(--text2)">
+        ${escapeHTML(sale.metodo)}
+      </td>
+
+      <td style="color:var(--text2)">
+        ${escapeHTML(sale.vendedor)}
+      </td>
     </tr>
   `).join('');
 }
 
 // ══════════════════════════════════════════════
-//  CARGAR VENTA
+// REGISTRAR VENTA
 // ══════════════════════════════════════════════
+
 async function submitVenta() {
-  const prod = document.getElementById('v-prod').value.trim();
-  const cat  = document.getElementById('v-cat').value;
-  const cur  = document.getElementById('v-cur').value;
-  const amt  = parseFloat(document.getElementById('v-amt').value);
-  const met  = document.getElementById('v-met').value;
-  const nota = document.getElementById('v-nota').value.trim();
-  const err  = document.getElementById('v-err');
-  const btn  = document.getElementById('v-btn');
-  err.textContent = '';
+  const productInput = document.getElementById('v-prod');
+  const quantityInput = document.getElementById('v-cantidad');
+  const currencyInput = document.getElementById('v-cur');
+  const amountInput = document.getElementById('v-amt');
+  const methodInput = document.getElementById('v-met');
+  const noteInput = document.getElementById('v-nota');
+  const errorText = document.getElementById('v-err');
+  const button = document.getElementById('v-btn');
 
-  if (!prod) { err.textContent = 'Ingresá el nombre del producto.'; return; }
-  if (!amt || amt <= 0) { err.textContent = 'Ingresá un monto válido.'; return; }
+  if (
+    !productInput ||
+    !quantityInput ||
+    !currencyInput ||
+    !amountInput ||
+    !methodInput ||
+    !noteInput
+  ) {
+    return;
+  }
 
-  btn.textContent = 'Guardando...';
-  btn.disabled = true;
+  const productId = productInput.value;
+  const cantidad = parseInt(quantityInput.value, 10);
+  const moneda = currencyInput.value;
+  const monto = parseFloat(amountInput.value);
+  const metodo = methodInput.value;
+  const nota = noteInput.value.trim();
 
-  const { error } = await sb.from('ventas').insert([{
-    fecha: todayStr(),
-    hora: nowTime(),
-    producto: prod,
-    categoria: cat,
-    moneda: cur,
-    monto: amt,
-    metodo: met,
-    nota: nota || null,
-    vendedor: currentUser.display
-  }]);
+  if (errorText) {
+    errorText.textContent = '';
+  }
 
-  btn.textContent = 'Registrar venta';
-  btn.disabled = false;
+  if (!productId) {
+    if (errorText) errorText.textContent = 'Seleccioná un producto.';
+    return;
+  }
 
-  if (error) { err.textContent = 'Error al guardar. Intentá de nuevo.'; return; }
+  if (!Number.isInteger(cantidad) || cantidad <= 0) {
+    if (errorText) {
+      errorText.textContent = 'Ingresá una cantidad válida.';
+    }
 
-  document.getElementById('v-prod').value = '';
-  document.getElementById('v-amt').value  = '';
-  document.getElementById('v-nota').value = '';
-  showToast('✓ Venta registrada', 'ok');
+    return;
+  }
+
+  if (!Number.isFinite(monto) || monto <= 0) {
+    if (errorText) {
+      errorText.textContent = 'Ingresá un monto válido.';
+    }
+
+    return;
+  }
+
+  const {
+    data: producto,
+    error: stockError
+  } = await sb
+    .from('stock')
+    .select('*')
+    .eq('id', productId)
+    .single();
+
+  if (stockError || !producto) {
+    if (errorText) {
+      errorText.textContent = 'No se pudo encontrar el producto.';
+    }
+
+    return;
+  }
+
+  if (Number(producto.cantidad) < cantidad) {
+    if (errorText) {
+      errorText.textContent =
+        `Stock insuficiente. Disponible: ${producto.cantidad}.`;
+    }
+
+    return;
+  }
+
+  if (button) {
+    button.textContent = 'Guardando...';
+    button.disabled = true;
+  }
+
+  const { error: ventaError } = await sb
+    .from('ventas')
+    .insert([{
+      fecha: todayStr(),
+      hora: nowTime(),
+      producto_id: producto.id,
+      producto: producto.nombre,
+      categoria: producto.categoria,
+      cantidad,
+      moneda,
+      monto,
+      metodo,
+      nota: nota || null,
+      vendedor: currentUser ? currentUser.display : 'Sin vendedor'
+    }]);
+
+  if (ventaError) {
+    if (button) {
+      button.textContent = 'Registrar venta';
+      button.disabled = false;
+    }
+
+    if (errorText) {
+      errorText.textContent =
+        'Error al guardar la venta. Intentá de nuevo.';
+    }
+
+    console.error(ventaError);
+    return;
+  }
+
+  const { error: updateError } = await sb
+    .from('stock')
+    .update({
+      cantidad: Number(producto.cantidad) - cantidad
+    })
+    .eq('id', producto.id);
+
+  if (updateError) {
+    if (button) {
+      button.textContent = 'Registrar venta';
+      button.disabled = false;
+    }
+
+    if (errorText) {
+      errorText.textContent =
+        'La venta se guardó, pero no se pudo actualizar el stock.';
+    }
+
+    console.error(updateError);
+    return;
+  }
+
+  if (button) {
+    button.textContent = 'Registrar venta';
+    button.disabled = false;
+  }
+
+  productInput.value = '';
+  quantityInput.value = '1';
+  amountInput.value = '';
+  noteInput.value = '';
+
+  const stockInfo = document.getElementById('v-stock-info');
+
+  if (stockInfo) {
+    stockInfo.textContent = 'Seleccioná un producto';
+  }
+
+  await loadProductOptions();
+
+  showToast('✓ Venta registrada y stock actualizado', 'ok');
+
+  await loadDashboard();
 }
 
 // ══════════════════════════════════════════════
-//  STOCK
+// PRODUCTOS PARA REGISTRAR VENTA
 // ══════════════════════════════════════════════
+
+async function loadProductOptions() {
+  const select = document.getElementById('v-prod');
+
+  if (!select) return;
+
+  const { data, error } = await sb
+    .from('stock')
+    .select('*')
+    .order('categoria')
+    .order('nombre');
+
+  if (error) {
+    select.innerHTML = `
+      <option value="">Error al cargar productos</option>
+    `;
+
+    console.error(error);
+    return;
+  }
+
+  if (!data || !data.length) {
+    select.innerHTML = `
+      <option value="">No hay productos cargados</option>
+    `;
+
+    return;
+  }
+
+  select.innerHTML = `
+    <option value="">Seleccioná un producto</option>
+  `;
+
+  data.forEach(product => {
+    const option = document.createElement('option');
+
+    option.value = product.id;
+    option.dataset.stock = product.cantidad;
+
+    option.textContent =
+      `${product.nombre} — ${product.categoria} — stock: ${product.cantidad}`;
+
+    select.appendChild(option);
+  });
+
+  select.onchange = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    const stockInfo = document.getElementById('v-stock-info');
+
+    if (!stockInfo) return;
+
+    if (selectedOption && selectedOption.value) {
+      stockInfo.textContent =
+        `Stock disponible: ${selectedOption.dataset.stock}`;
+    } else {
+      stockInfo.textContent = 'Seleccioná un producto';
+    }
+  };
+}
+
+// ══════════════════════════════════════════════
+// STOCK
+// ══════════════════════════════════════════════
+
 async function loadStock() {
-  const wrap = document.getElementById('stock-cols');
-  wrap.innerHTML = `<div class="loader"><div class="spinner"></div> Cargando...</div>`;
+  const wrapper = document.getElementById('stock-cols');
 
-  const { data, error } = await sb.from('stock').select('*').order('categoria').order('nombre');
-  if (error) { wrap.innerHTML = '<p style="color:var(--red);padding:16px">Error al cargar stock.</p>'; return; }
+  if (!wrapper) return;
 
-  const cats = ['Ropa', 'Accesorios'];
-  wrap.innerHTML = cats.map(cat => {
-    const items = data.filter(i => i.categoria === cat);
+  wrapper.innerHTML = `
+    <div class="loader">
+      <div class="spinner"></div>
+      Cargando...
+    </div>
+  `;
+
+  const { data, error } = await sb
+    .from('stock')
+    .select('*')
+    .order('categoria')
+    .order('nombre');
+
+  if (error) {
+    wrapper.innerHTML = `
+      <p style="color:var(--red);padding:16px">
+        Error al cargar stock.
+      </p>
+    `;
+
+    console.error(error);
+    return;
+  }
+
+  const products = data || [];
+  const categories = ['Ropa', 'Accesorios'];
+
+  wrapper.innerHTML = categories.map(category => {
+    const categoryProducts = products.filter(
+      product => product.categoria === category
+    );
+
     return `
       <div class="stock-box">
-        <h3>${cat}</h3>
-        ${items.map(item => `
-          <div class="stock-row">
-            <span class="stock-name">${item.nombre}</span>
-            <div class="stock-controls">
-              <button class="btn-qty" onclick="changeStock(${item.id}, -1)">−</button>
-              <span class="stock-qty ${item.cantidad <= 2 ? 'low' : ''}">${item.cantidad}</span>
-              <button class="btn-qty" onclick="changeStock(${item.id}, 1)">+</button>
-              <button class="btn-del" onclick="deleteStock(${item.id})" title="Eliminar">×</button>
-            </div>
-          </div>
-        `).join('')}
+        <h3>${category}</h3>
+
+        ${
+          categoryProducts.length
+            ? categoryProducts.map(product => `
+              <div class="stock-row">
+                <span class="stock-name">
+                  ${escapeHTML(product.nombre)}
+                </span>
+
+                <div class="stock-controls">
+                  <button
+                    class="btn-qty"
+                    onclick="changeStock(${product.id}, -1)"
+                  >
+                    −
+                  </button>
+
+                  <span class="stock-qty ${
+                    Number(product.cantidad) <= 2 ? 'low' : ''
+                  }">
+                    ${product.cantidad}
+                  </span>
+
+                  <button
+                    class="btn-qty"
+                    onclick="changeStock(${product.id}, 1)"
+                  >
+                    +
+                  </button>
+
+                  <button
+                    class="btn-del"
+                    onclick="deleteStock(${product.id})"
+                    title="Eliminar"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            `).join('')
+            : '<p class="empty">No hay productos cargados.</p>'
+        }
+
         <div class="add-row">
-          <input type="text" id="new-${cat}" placeholder="Nuevo producto...">
-          <button class="btn-outline" onclick="addStock('${cat}')">Agregar</button>
+          <input
+            type="text"
+            id="new-${category}"
+            placeholder="Nuevo producto..."
+          />
+
+          <input
+            type="number"
+            id="qty-${category}"
+            min="0"
+            step="1"
+            value="0"
+            placeholder="Cantidad"
+            style="max-width:100px"
+          />
+
+          <button
+            class="btn-outline"
+            onclick="addStock('${category}')"
+          >
+            Agregar
+          </button>
         </div>
       </div>
     `;
@@ -319,63 +913,234 @@ async function loadStock() {
 }
 
 async function changeStock(id, delta) {
-  const { data } = await sb.from('stock').select('cantidad').eq('id', id).single();
-  const newQty = Math.max(0, data.cantidad + delta);
-  await sb.from('stock').update({ cantidad: newQty }).eq('id', id);
-  loadStock();
+  const { data, error } = await sb
+    .from('stock')
+    .select('cantidad')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    showToast('No se pudo consultar el stock', 'fail');
+    return;
+  }
+
+  const newQuantity = Math.max(
+    0,
+    Number(data.cantidad) + delta
+  );
+
+  const { error: updateError } = await sb
+    .from('stock')
+    .update({
+      cantidad: newQuantity
+    })
+    .eq('id', id);
+
+  if (updateError) {
+    showToast('No se pudo actualizar el stock', 'fail');
+    console.error(updateError);
+    return;
+  }
+
+  await loadStock();
+  await loadProductOptions();
 }
 
 async function deleteStock(id) {
-  if (!confirm('¿Eliminar este producto del stock?')) return;
-  await sb.from('stock').delete().eq('id', id);
-  loadStock();
-}
-
-async function addStock(cat) {
-  const inp = document.getElementById('new-' + cat);
-  const name = inp.value.trim();
-  if (!name) return;
-  await sb.from('stock').insert([{ nombre: name, categoria: cat, cantidad: 0 }]);
-  inp.value = '';
-  loadStock();
-  showToast('Producto agregado', 'ok');
-}
-
-// ══════════════════════════════════════════════
-//  HISTORIAL
-// ══════════════════════════════════════════════
-async function loadHistorial() {
-  const tbody = document.getElementById('hist-tbody');
-  tbody.innerHTML = `<tr><td colspan="7" class="empty"><div class="loader"><div class="spinner"></div> Cargando...</div></td></tr>`;
-
-  const fv = document.getElementById('f-vend').value;
-  const fc = document.getElementById('f-cat').value;
-  const fm = document.getElementById('f-cur').value;
-
-  let q = sb.from('ventas').select('*').order('created_at', { ascending: false }).limit(200);
-  if (fv) q = q.eq('vendedor', fv);
-  if (fc) q = q.eq('categoria', fc);
-  if (fm) q = q.eq('moneda', fm);
-
-  const { data, error } = await q;
-  if (error) { showToast('Error al cargar historial', 'fail'); return; }
-
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">Sin ventas para mostrar.</td></tr>`;
+  if (!confirm('¿Eliminar este producto del stock?')) {
     return;
   }
-  tbody.innerHTML = data.map(s => `
+
+  const { error } = await sb
+    .from('stock')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    showToast('No se pudo eliminar el producto', 'fail');
+    console.error(error);
+    return;
+  }
+
+  await loadStock();
+  await loadProductOptions();
+
+  showToast('Producto eliminado', 'ok');
+}
+
+async function addStock(category) {
+  const nameInput = document.getElementById('new-' + category);
+  const quantityInput = document.getElementById('qty-' + category);
+
+  if (!nameInput || !quantityInput) {
+    return;
+  }
+
+  const name = nameInput.value.trim();
+  const quantity = parseInt(quantityInput.value, 10);
+
+  if (!name) {
+    showToast('Ingresá el nombre del producto', 'fail');
+    return;
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 0) {
+    showToast('Ingresá una cantidad válida', 'fail');
+    return;
+  }
+
+  const { error } = await sb
+    .from('stock')
+    .insert([{
+      nombre: name,
+      categoria: category,
+      cantidad: quantity
+    }]);
+
+  if (error) {
+    showToast('No se pudo agregar el producto', 'fail');
+    console.error(error);
+    return;
+  }
+
+  nameInput.value = '';
+  quantityInput.value = '0';
+
+  await loadStock();
+  await loadProductOptions();
+
+  showToast('Producto agregado correctamente', 'ok');
+}
+
+// ══════════════════════════════════════════════
+// HISTORIAL
+// ══════════════════════════════════════════════
+
+async function loadHistorial() {
+  const tbody = document.getElementById('hist-tbody');
+
+  if (!tbody) return;
+
+  tbody.innerHTML = `
     <tr>
-      <td style="font-size:12px;color:var(--text2)">${s.fecha} ${s.hora}</td>
-      <td>
-        ${s.producto}
-        ${s.nota ? `<br><span style="font-size:11px;color:var(--text3)">${s.nota}</span>` : ''}
+      <td colspan="7" class="empty">
+        <div class="loader">
+          <div class="spinner"></div>
+          Cargando...
+        </div>
       </td>
-      <td><span class="tag ${s.categoria === 'Ropa' ? 'tag-ropa' : 'tag-accs'}">${s.categoria}</span></td>
-      <td><span class="tag tag-${s.moneda.toLowerCase()}">${s.moneda}</span></td>
-      <td style="font-weight:500">${fmtMonto(s.moneda, s.monto)}</td>
-      <td style="color:var(--text2)">${s.metodo}</td>
-      <td style="color:var(--text2)">${s.vendedor}</td>
+    </tr>
+  `;
+
+  const vendorFilter =
+    document.getElementById('f-vend')?.value || '';
+
+  const categoryFilter =
+    document.getElementById('f-cat')?.value || '';
+
+  const currencyFilter =
+    document.getElementById('f-cur')?.value || '';
+
+  let query = sb
+    .from('ventas')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (vendorFilter) {
+    query = query.eq('vendedor', vendorFilter);
+  }
+
+  if (categoryFilter) {
+    query = query.eq('categoria', categoryFilter);
+  }
+
+  if (currencyFilter) {
+    query = query.eq('moneda', currencyFilter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    showToast('Error al cargar historial', 'fail');
+    console.error(error);
+    return;
+  }
+
+  if (!data || !data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty">
+          Sin ventas para mostrar.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  tbody.innerHTML = data.map(sale => `
+    <tr>
+      <td style="font-size:12px;color:var(--text2)">
+        ${escapeHTML(sale.fecha)} ${escapeHTML(sale.hora)}
+      </td>
+
+      <td>
+        ${escapeHTML(sale.producto)}
+
+        ${
+          sale.cantidad
+            ? `<br><small>Cantidad: ${sale.cantidad}</small>`
+            : ''
+        }
+
+        ${
+          sale.nota
+            ? `
+              <br>
+              <span style="font-size:11px;color:var(--text3)">
+                ${escapeHTML(sale.nota)}
+              </span>
+            `
+            : ''
+        }
+      </td>
+
+      <td>
+        <span class="tag ${
+          sale.categoria === 'Ropa'
+            ? 'tag-ropa'
+            : 'tag-accs'
+        }">
+          ${escapeHTML(sale.categoria)}
+        </span>
+      </td>
+
+      <td>
+        <span class="tag tag-${String(sale.moneda).toLowerCase()}">
+          ${escapeHTML(sale.moneda)}
+        </span>
+      </td>
+
+      <td style="font-weight:500">
+        ${fmtMonto(sale.moneda, sale.monto)}
+      </td>
+
+      <td style="color:var(--text2)">
+        ${escapeHTML(sale.metodo)}
+      </td>
+
+      <td style="color:var(--text2)">
+        ${escapeHTML(sale.vendedor)}
+      </td>
     </tr>
   `).join('');
 }
+
+// ══════════════════════════════════════════════
+// INICIALIZACIÓN
+// ══════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  showScreen('screen-login');
+});
