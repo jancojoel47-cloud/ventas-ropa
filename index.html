@@ -130,7 +130,7 @@
               <span class="nav-icon">↺</span> Historial
             </button>
             <button class="nav-tab" onclick="goTab('cubitos', this)">
-              Cubitos
+              <span class="nav-icon">🧊</span> Cubitos
             </button>
             <button
               class="nav-tab"
@@ -420,6 +420,156 @@
               >
                 Crear usuario
               </button>
+            </div>
+          </section>
+          <section class="tab-content" id="tab-cubitos">
+            <div class="page-title">
+              <p class="eyebrow">NEGOCIO APARTE</p>
+              <h2>Cubitos</h2>
+              <p>Registrá ventas y gastos de materia prima.</p>
+            </div>
+
+            <!-- MÉTRICAS -->
+            <div class="metrics" id="cubitos-metrics"></div>
+
+            <!-- FORMULARIOS -->
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 32px;
+              "
+              class="cubitos-forms"
+            >
+              <!-- VENTA -->
+              <div class="form-card">
+                <h2>💰 Nueva venta</h2>
+                <div class="field">
+                  <label>Descripción</label>
+                  <input
+                    type="text"
+                    id="cv-desc"
+                    placeholder="Ej: 10 bolsas de cubitos"
+                  />
+                </div>
+                <div class="form-row">
+                  <div class="field">
+                    <label>Cantidad</label>
+                    <input type="number" id="cv-cant" value="1" min="1" />
+                  </div>
+                  <div class="field">
+                    <label>Monto $</label>
+                    <input
+                      type="number"
+                      id="cv-monto"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Método de pago</label>
+                  <select id="cv-met">
+                    <option>Efectivo</option>
+                    <option>Transferencia</option>
+                    <option>Débito</option>
+                    <option>MercadoPago</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Nota (opcional)</label>
+                  <input
+                    type="text"
+                    id="cv-nota"
+                    placeholder="Ej: cliente frecuente"
+                  />
+                </div>
+                <p class="err" id="cv-err"></p>
+                <button
+                  class="btn btn-green"
+                  id="cv-btn"
+                  onclick="submitCubitosVenta()"
+                >
+                  Registrar venta
+                </button>
+              </div>
+
+              <!-- GASTO -->
+              <div class="form-card">
+                <h2>📦 Nuevo gasto</h2>
+                <div class="field">
+                  <label>Descripción</label>
+                  <input
+                    type="text"
+                    id="cg-desc"
+                    placeholder="Ej: bolsas, agua, gas"
+                  />
+                </div>
+                <div class="field">
+                  <label>Monto $</label>
+                  <input type="number" id="cg-monto" placeholder="0" min="0" />
+                </div>
+                <div class="field">
+                  <label>Nota (opcional)</label>
+                  <input
+                    type="text"
+                    id="cg-nota"
+                    placeholder="Ej: proveedor X"
+                  />
+                </div>
+                <p class="err" id="cg-err"></p>
+                <button
+                  class="btn btn-accent"
+                  id="cg-btn"
+                  onclick="submitCubitosGasto()"
+                >
+                  Registrar gasto
+                </button>
+              </div>
+            </div>
+
+            <!-- HISTORIAL -->
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px"
+              class="cubitos-forms"
+            >
+              <div>
+                <div class="section-hd">
+                  <h2>Ventas recientes</h2>
+                  <button class="btn-sm" onclick="loadCubitos()">↻</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Monto</th>
+                        <th>Vendedor</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cubitos-ventas-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <div class="section-hd">
+                  <h2>Gastos recientes</h2>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cubitos-gastos-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </section>
         </main>

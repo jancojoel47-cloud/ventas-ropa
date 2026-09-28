@@ -635,3 +635,10 @@ tbody tr:hover { background: rgba(212,175,55,0.035); }
   .login-logo img { width: 120px; }
   .login-brand h1 { font-size: 26px; }
 }
+
+/* ── CUBITOS RESPONSIVE ── */
+@media (max-width: 640px) {
+  .cubitos-forms {
+    grid-template-columns: 1fr !important;
+  }
+}

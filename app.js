@@ -391,6 +391,8 @@ function goTab(tab, btn) {
     tabButton.classList.remove("active");
   });
 
+  if (tab === 'cubitos') loadCubitos();
+  
   if (btn) {
     btn.classList.add("active");
   }
@@ -1122,3 +1124,136 @@ async function loadHistorial() {
 document.addEventListener("DOMContentLoaded", () => {
   showScreen("screen-login");
 });
+
+
+// ══════════════════════════════════════════════
+// CUBITOS
+// ══════════════════════════════════════════════
+
+async function loadCubitos() {
+  // Métricas
+  const metrics = document.getElementById('cubitos-metrics');
+  if (metrics) {
+    const [{ data: ventas }, { data: gastos }] = await Promise.all([
+      sb.from('cubitos_ventas').select('monto'),
+      sb.from('cubitos_gastos').select('monto')
+    ]);
+
+    const totalVentas = (ventas || []).reduce((a, b) => a + Number(b.monto), 0);
+    const totalGastos = (gastos || []).reduce((a, b) => a + Number(b.monto), 0);
+    const ganancia = totalVentas - totalGastos;
+
+    metrics.innerHTML = `
+      <div class="metric-card">
+        <div class="metric-label">Total ventas</div>
+        <div class="metric-val">$${totalVentas.toLocaleString('es-AR')}</div>
+        <div class="metric-sub">acumulado</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total gastos</div>
+        <div class="metric-val" style="color:#f87171">$${totalGastos.toLocaleString('es-AR')}</div>
+        <div class="metric-sub">materia prima</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Ganancia neta</div>
+        <div class="metric-val" style="color:${ganancia >= 0 ? '#4ade80' : '#f87171'}">
+          $${ganancia.toLocaleString('es-AR')}
+        </div>
+        <div class="metric-sub">ventas − gastos</div>
+      </div>
+    `;
+  }
+
+  // Ventas recientes
+  const vtbody = document.getElementById('cubitos-ventas-tbody');
+  if (vtbody) {
+    const { data } = await sb.from('cubitos_ventas').select('*').order('created_at', { ascending: false }).limit(50);
+    vtbody.innerHTML = (data || []).length ? data.map(v => `
+      <tr>
+        <td style="font-size:12px;color:var(--text2)">${escapeHTML(v.fecha)}</td>
+        <td>${escapeHTML(v.descripcion)}${v.nota ? `<br><small style="color:var(--text3)">${escapeHTML(v.nota)}</small>` : ''}</td>
+        <td style="font-weight:500;color:#f4d675">$${Number(v.monto).toLocaleString('es-AR')}</td>
+        <td style="color:var(--text2)">${escapeHTML(v.vendedor)}</td>
+      </tr>
+    `).join('') : `<tr><td colspan="4" class="empty">Sin ventas aún.</td></tr>`;
+  }
+
+  // Gastos recientes
+  const gtbody = document.getElementById('cubitos-gastos-tbody');
+  if (gtbody) {
+    const { data } = await sb.from('cubitos_gastos').select('*').order('created_at', { ascending: false }).limit(50);
+    gtbody.innerHTML = (data || []).length ? data.map(g => `
+      <tr>
+        <td style="font-size:12px;color:var(--text2)">${escapeHTML(g.fecha)}</td>
+        <td>${escapeHTML(g.descripcion)}${g.nota ? `<br><small style="color:var(--text3)">${escapeHTML(g.nota)}</small>` : ''}</td>
+        <td style="font-weight:500;color:#f87171">$${Number(g.monto).toLocaleString('es-AR')}</td>
+      </tr>
+    `).join('') : `<tr><td colspan="3" class="empty">Sin gastos aún.</td></tr>`;
+  }
+}
+
+async function submitCubitosVenta() {
+  const desc  = document.getElementById('cv-desc').value.trim();
+  const cant  = parseInt(document.getElementById('cv-cant').value, 10);
+  const monto = parseFloat(document.getElementById('cv-monto').value);
+  const met   = document.getElementById('cv-met').value;
+  const nota  = document.getElementById('cv-nota').value.trim();
+  const err   = document.getElementById('cv-err');
+  const btn   = document.getElementById('cv-btn');
+  err.textContent = '';
+
+  if (!desc) { err.textContent = 'Ingresá una descripción.'; return; }
+  if (!cant || cant <= 0) { err.textContent = 'Ingresá una cantidad válida.'; return; }
+  if (!monto || monto <= 0) { err.textContent = 'Ingresá un monto válido.'; return; }
+
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+
+  const { error } = await sb.from('cubitos_ventas').insert([{
+    fecha: todayStr(), hora: nowTime(),
+    descripcion: desc, cantidad: cant, monto, metodo: met,
+    nota: nota || null,
+    vendedor: currentUser ? currentUser.display : 'Sin vendedor'
+  }]);
+
+  btn.textContent = 'Registrar venta'; btn.disabled = false;
+
+  if (error) { err.textContent = 'Error al guardar.'; console.error(error); return; }
+
+  document.getElementById('cv-desc').value = '';
+  document.getElementById('cv-cant').value = '1';
+  document.getElementById('cv-monto').value = '';
+  document.getElementById('cv-nota').value = '';
+  showToast('✓ Venta de cubitos registrada', 'ok');
+  loadCubitos();
+}
+
+async function submitCubitosGasto() {
+  const desc  = document.getElementById('cg-desc').value.trim();
+  const monto = parseFloat(document.getElementById('cg-monto').value);
+  const nota  = document.getElementById('cg-nota').value.trim();
+  const err   = document.getElementById('cg-err');
+  const btn   = document.getElementById('cg-btn');
+  err.textContent = '';
+
+  if (!desc) { err.textContent = 'Ingresá una descripción.'; return; }
+  if (!monto || monto <= 0) { err.textContent = 'Ingresá un monto válido.'; return; }
+
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+
+  const { error } = await sb.from('cubitos_gastos').insert([{
+    fecha: todayStr(), hora: nowTime(),
+    descripcion: desc, monto,
+    nota: nota || null,
+    vendedor: currentUser ? currentUser.display : 'Sin vendedor'
+  }]);
+
+  btn.textContent = 'Registrar gasto'; btn.disabled = false;
+
+  if (error) { err.textContent = 'Error al guardar.'; console.error(error); return; }
+
+  document.getElementById('cg-desc').value = '';
+  document.getElementById('cg-monto').value = '';
+  document.getElementById('cg-nota').value = '';
+  showToast('✓ Gasto registrado', 'ok');
+  loadCubitos();
+}
