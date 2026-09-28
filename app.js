@@ -2,8 +2,8 @@
 // CONFIGURACIÓN SUPABASE
 // ══════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://wnaxkfnkhwveamrswwim.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_nnJa7QKdYLiwxKEyvos9qg_YNRUU185';
+const SUPABASE_URL = "https://wnaxkfnkhwveamrswwim.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nnJa7QKdYLiwxKEyvos9qg_YNRUU185";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -14,67 +14,67 @@ let currentUser = null;
 // ══════════════════════════════════════════════
 
 function todayStr() {
-  return new Date().toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
+  return new Date().toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
 }
 
 function nowTime() {
-  return new Date().toLocaleTimeString('es-AR', {
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date().toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 function fmtMonto(cur, amt) {
-  if (cur === 'ARS') {
-    return '$' + Number(amt).toLocaleString('es-AR');
+  if (cur === "ARS") {
+    return "$" + Number(amt).toLocaleString("es-AR");
   }
 
-  if (cur === 'USD') {
-    return 'U$D ' + Number(amt).toFixed(2);
+  if (cur === "USD") {
+    return "U$D " + Number(amt).toFixed(2);
   }
 
-  if (cur === 'BRL') {
-    return 'R$ ' + Number(amt).toFixed(2);
+  if (cur === "BRL") {
+    return "R$ " + Number(amt).toFixed(2);
   }
 
   return amt;
 }
 
 function escapeHTML(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function showToast(msg, type = 'ok') {
-  const toast = document.getElementById('toast');
+function showToast(msg, type = "ok") {
+  const toast = document.getElementById("toast");
 
   if (!toast) return;
 
   toast.textContent = msg;
-  toast.className = 'toast ' + type + ' show';
+  toast.className = "toast " + type + " show";
 
   setTimeout(() => {
-    toast.className = 'toast';
+    toast.className = "toast";
   }, 3000);
 }
 
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(screen => {
-    screen.classList.remove('active');
+  document.querySelectorAll(".screen").forEach((screen) => {
+    screen.classList.remove("active");
   });
 
   const screen = document.getElementById(id);
 
   if (screen) {
-    screen.classList.add('active');
+    screen.classList.add("active");
   }
 }
 
@@ -82,11 +82,11 @@ function showScreen(id) {
 // LOGIN / LOGOUT
 // ══════════════════════════════════════════════
 
-const passInput = document.getElementById('inp-pass');
+const passInput = document.getElementById("inp-pass");
 
 if (passInput) {
-  passInput.addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
+  passInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
       doLogin();
     }
   });
@@ -97,26 +97,26 @@ function togglePass(inputId, btn) {
 
   if (!input) return;
 
-  const svgs = btn ? btn.querySelectorAll('svg') : [];
+  const svgs = btn ? btn.querySelectorAll("svg") : [];
 
-  if (input.type === 'password') {
-    input.type = 'text';
+  if (input.type === "password") {
+    input.type = "text";
 
-    if (svgs[0]) svgs[0].style.display = 'none';
-    if (svgs[1]) svgs[1].style.display = 'block';
+    if (svgs[0]) svgs[0].style.display = "none";
+    if (svgs[1]) svgs[1].style.display = "block";
   } else {
-    input.type = 'password';
+    input.type = "password";
 
-    if (svgs[0]) svgs[0].style.display = 'block';
-    if (svgs[1]) svgs[1].style.display = 'none';
+    if (svgs[0]) svgs[0].style.display = "block";
+    if (svgs[1]) svgs[1].style.display = "none";
   }
 }
 
 async function doLogin() {
-  const userInput = document.getElementById('inp-user');
-  const passwordInput = document.getElementById('inp-pass');
-  const errorText = document.getElementById('login-err');
-  const button = document.querySelector('#screen-login .btn-accent');
+  const userInput = document.getElementById("inp-user");
+  const passwordInput = document.getElementById("inp-pass");
+  const errorText = document.getElementById("login-err");
+  const button = document.querySelector("#screen-login .btn-accent");
 
   if (!userInput || !passwordInput) return;
 
@@ -124,37 +124,37 @@ async function doLogin() {
   const password = passwordInput.value;
 
   if (errorText) {
-    errorText.textContent = '';
+    errorText.textContent = "";
   }
 
   if (!username || !password) {
     if (errorText) {
-      errorText.textContent = 'Completá los campos.';
+      errorText.textContent = "Completá los campos.";
     }
 
     return;
   }
 
   if (button) {
-    button.textContent = 'Entrando...';
+    button.textContent = "Entrando...";
     button.disabled = true;
   }
 
   const { data, error } = await sb
-    .from('usuarios')
-    .select('*')
-    .eq('usuario', username)
-    .eq('password', password)
+    .from("usuarios")
+    .select("*")
+    .eq("usuario", username)
+    .eq("password", password)
     .single();
 
   if (button) {
-    button.textContent = 'Entrar';
+    button.textContent = "Entrar";
     button.disabled = false;
   }
 
   if (error || !data) {
     if (errorText) {
-      errorText.textContent = 'Usuario o contraseña incorrectos.';
+      errorText.textContent = "Usuario o contraseña incorrectos.";
     }
 
     return;
@@ -164,35 +164,35 @@ async function doLogin() {
     id: data.id,
     usuario: data.usuario,
     display: data.nombre,
-    rol: data.rol
+    rol: data.rol,
   };
 
-  const vendorChip = document.getElementById('vendor-chip');
+  const vendorChip = document.getElementById("vendor-chip");
 
   if (vendorChip) {
     vendorChip.textContent = currentUser.display;
   }
 
-  const sidebarUserName = document.getElementById('sidebar-user-name');
+  const sidebarUserName = document.getElementById("sidebar-user-name");
 
   if (sidebarUserName) {
     sidebarUserName.textContent = currentUser.display;
   }
 
-  const esAdmin = currentUser.rol === 'admin';
+  const esAdmin = currentUser.rol === "admin";
 
-  const usuariosTab = document.getElementById('tab-btn-usuarios');
-  const usuariosMobileTab = document.getElementById('mob-tab-btn-usuarios');
+  const usuariosTab = document.getElementById("tab-btn-usuarios");
+  const usuariosMobileTab = document.getElementById("mob-tab-btn-usuarios");
 
   if (usuariosTab) {
-    usuariosTab.style.display = esAdmin ? 'inline-block' : 'none';
+    usuariosTab.style.display = esAdmin ? "inline-block" : "none";
   }
 
   if (usuariosMobileTab) {
-    usuariosMobileTab.style.display = esAdmin ? 'inline-block' : 'none';
+    usuariosMobileTab.style.display = esAdmin ? "inline-block" : "none";
   }
 
-  showScreen('screen-app');
+  showScreen("screen-app");
 
   await loadProductOptions();
   await loadDashboard();
@@ -201,13 +201,13 @@ async function doLogin() {
 function doLogout() {
   currentUser = null;
 
-  const userInput = document.getElementById('inp-user');
-  const passwordInput = document.getElementById('inp-pass');
+  const userInput = document.getElementById("inp-user");
+  const passwordInput = document.getElementById("inp-pass");
 
-  if (userInput) userInput.value = '';
-  if (passwordInput) passwordInput.value = '';
+  if (userInput) userInput.value = "";
+  if (passwordInput) passwordInput.value = "";
 
-  showScreen('screen-login');
+  showScreen("screen-login");
 }
 
 // ══════════════════════════════════════════════
@@ -215,7 +215,7 @@ function doLogout() {
 // ══════════════════════════════════════════════
 
 async function loadUsuarios() {
-  const grid = document.getElementById('users-grid');
+  const grid = document.getElementById("users-grid");
 
   if (!grid) return;
 
@@ -227,9 +227,9 @@ async function loadUsuarios() {
   `;
 
   const { data, error } = await sb
-    .from('usuarios')
-    .select('*')
-    .order('created_at');
+    .from("usuarios")
+    .select("*")
+    .order("created_at");
 
   if (error) {
     grid.innerHTML = `
@@ -243,11 +243,13 @@ async function loadUsuarios() {
   }
 
   if (!data || !data.length) {
-    grid.innerHTML = '<p>No hay usuarios cargados.</p>';
+    grid.innerHTML = "<p>No hay usuarios cargados.</p>";
     return;
   }
 
-  grid.innerHTML = data.map(user => `
+  grid.innerHTML = data
+    .map(
+      (user) => `
     <div class="user-card">
       <div class="user-info">
         <span class="user-name">
@@ -259,11 +261,7 @@ async function loadUsuarios() {
         </span>
 
         <span
-          class="tag ${
-            user.rol === 'admin'
-              ? 'tag-admin'
-              : 'tag-vendedor'
-          }"
+          class="tag ${user.rol === "admin" ? "tag-admin" : "tag-vendedor"}"
           style="margin-top:4px;width:fit-content"
         >
           ${escapeHTML(user.rol)}
@@ -271,7 +269,7 @@ async function loadUsuarios() {
       </div>
 
       ${
-        user.usuario !== 'admin'
+        user.usuario !== "admin"
           ? `
             <button
               class="btn-del-user"
@@ -281,19 +279,21 @@ async function loadUsuarios() {
               ×
             </button>
           `
-          : ''
+          : ""
       }
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 async function crearUsuario() {
-  const nombreInput = document.getElementById('u-nombre');
-  const usuarioInput = document.getElementById('u-usuario');
-  const passwordInput = document.getElementById('u-pass');
-  const rolInput = document.getElementById('u-rol');
-  const errorText = document.getElementById('u-err');
-  const button = document.getElementById('u-btn');
+  const nombreInput = document.getElementById("u-nombre");
+  const usuarioInput = document.getElementById("u-usuario");
+  const passwordInput = document.getElementById("u-pass");
+  const rolInput = document.getElementById("u-rol");
+  const errorText = document.getElementById("u-err");
+  const button = document.getElementById("u-btn");
 
   if (!nombreInput || !usuarioInput || !passwordInput || !rolInput) {
     return;
@@ -305,12 +305,12 @@ async function crearUsuario() {
   const rol = rolInput.value;
 
   if (errorText) {
-    errorText.textContent = '';
+    errorText.textContent = "";
   }
 
   if (!nombre || !usuario || !password) {
     if (errorText) {
-      errorText.textContent = 'Completá todos los campos.';
+      errorText.textContent = "Completá todos los campos.";
     }
 
     return;
@@ -318,49 +318,48 @@ async function crearUsuario() {
 
   if (password.length < 4) {
     if (errorText) {
-      errorText.textContent =
-        'La contraseña debe tener al menos 4 caracteres.';
+      errorText.textContent = "La contraseña debe tener al menos 4 caracteres.";
     }
 
     return;
   }
 
   if (button) {
-    button.textContent = 'Creando...';
+    button.textContent = "Creando...";
     button.disabled = true;
   }
 
-  const { error } = await sb
-    .from('usuarios')
-    .insert([{
+  const { error } = await sb.from("usuarios").insert([
+    {
       nombre,
       usuario,
       password,
-      rol
-    }]);
+      rol,
+    },
+  ]);
 
   if (button) {
-    button.textContent = 'Crear usuario';
+    button.textContent = "Crear usuario";
     button.disabled = false;
   }
 
   if (error) {
     if (errorText) {
       errorText.textContent =
-        error.code === '23505'
-          ? 'Ese nombre de usuario ya existe.'
-          : 'Error al crear usuario.';
+        error.code === "23505"
+          ? "Ese nombre de usuario ya existe."
+          : "Error al crear usuario.";
     }
 
     console.error(error);
     return;
   }
 
-  nombreInput.value = '';
-  usuarioInput.value = '';
-  passwordInput.value = '';
+  nombreInput.value = "";
+  usuarioInput.value = "";
+  passwordInput.value = "";
 
-  showToast('✓ Usuario creado', 'ok');
+  showToast("✓ Usuario creado", "ok");
 
   await loadUsuarios();
 }
@@ -370,18 +369,15 @@ async function deleteUsuario(id, nombre) {
     return;
   }
 
-  const { error } = await sb
-    .from('usuarios')
-    .delete()
-    .eq('id', id);
+  const { error } = await sb.from("usuarios").delete().eq("id", id);
 
   if (error) {
-    showToast('No se pudo eliminar el usuario', 'fail');
+    showToast("No se pudo eliminar el usuario", "fail");
     console.error(error);
     return;
   }
 
-  showToast('Usuario eliminado', 'ok');
+  showToast("Usuario eliminado", "ok");
 
   await loadUsuarios();
 }
@@ -391,28 +387,28 @@ async function deleteUsuario(id, nombre) {
 // ══════════════════════════════════════════════
 
 function goTab(tab, btn) {
-  document.querySelectorAll('.nav-tab').forEach(tabButton => {
-    tabButton.classList.remove('active');
+  document.querySelectorAll(".nav-tab").forEach((tabButton) => {
+    tabButton.classList.remove("active");
   });
 
   if (btn) {
-    btn.classList.add('active');
+    btn.classList.add("active");
   }
 
-  document.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.remove('active');
+  document.querySelectorAll(".tab-content").forEach((content) => {
+    content.classList.remove("active");
   });
 
-  const selectedTab = document.getElementById('tab-' + tab);
+  const selectedTab = document.getElementById("tab-" + tab);
 
   if (selectedTab) {
-    selectedTab.classList.add('active');
+    selectedTab.classList.add("active");
   }
 
-  if (tab === 'dashboard') loadDashboard();
-  if (tab === 'stock') loadStock();
-  if (tab === 'historial') loadHistorial();
-  if (tab === 'usuarios') loadUsuarios();
+  if (tab === "dashboard") loadDashboard();
+  if (tab === "stock") loadStock();
+  if (tab === "historial") loadHistorial();
+  if (tab === "usuarios") loadUsuarios();
 }
 
 // ══════════════════════════════════════════════
@@ -420,7 +416,7 @@ function goTab(tab, btn) {
 // ══════════════════════════════════════════════
 
 async function loadDashboard() {
-  const tbody = document.getElementById('today-tbody');
+  const tbody = document.getElementById("today-tbody");
 
   if (!tbody) return;
 
@@ -436,13 +432,13 @@ async function loadDashboard() {
   `;
 
   const { data, error } = await sb
-    .from('ventas')
-    .select('*')
-    .eq('fecha', todayStr())
-    .order('created_at', { ascending: false });
+    .from("ventas")
+    .select("*")
+    .eq("fecha", todayStr())
+    .order("created_at", { ascending: false });
 
   if (error) {
-    showToast('Error al cargar datos', 'fail');
+    showToast("Error al cargar datos", "fail");
     console.error(error);
     return;
   }
@@ -450,55 +446,80 @@ async function loadDashboard() {
   const ventas = data || [];
 
   const totalARS = ventas
-    .filter(sale => sale.moneda === 'ARS')
+    .filter((sale) => sale.moneda === "ARS")
     .reduce((total, sale) => total + Number(sale.monto), 0);
 
   const totalUSD = ventas
-    .filter(sale => sale.moneda === 'USD')
+    .filter((sale) => sale.moneda === "USD")
     .reduce((total, sale) => total + Number(sale.monto), 0);
 
-  const ropa = ventas.filter(
-    sale => sale.categoria === 'Ropa'
-  ).length;
+  const ropa = ventas.filter((sale) => sale.categoria === "Ropa").length;
 
   const accesorios = ventas.filter(
-    sale => sale.categoria === 'Accesorios'
+    (sale) => sale.categoria === "Accesorios",
   ).length;
 
-  const metrics = document.getElementById('metrics');
+  const metrics = document.getElementById("metrics");
 
   if (metrics) {
+    // Traer acumulado histórico
+    const { data: historial } = await sb.from("ventas").select("moneda, monto");
+
+    const acumARS = (historial || [])
+      .filter((v) => v.moneda === "ARS")
+      .reduce((a, b) => a + Number(b.monto), 0);
+
+    const acumUSD = (historial || [])
+      .filter((v) => v.moneda === "USD")
+      .reduce((a, b) => a + Number(b.monto), 0);
+
+    const acumBRL = (historial || [])
+      .filter((v) => v.moneda === "BRL")
+      .reduce((a, b) => a + Number(b.monto), 0);
+
     metrics.innerHTML = `
-      <div class="metric-card">
-        <div class="metric-label">Ventas hoy</div>
-        <div class="metric-val">${ventas.length}</div>
-        <div class="metric-sub">total del día</div>
-      </div>
+  <div class="metric-card">
+    <div class="metric-label">Ventas hoy</div>
+    <div class="metric-val">${ventas.length}</div>
+    <div class="metric-sub">total del día</div>
+  </div>
 
-      <div class="metric-card">
-        <div class="metric-label">Ingresos ARS</div>
-        <div class="metric-val">
-          $${totalARS.toLocaleString('es-AR')}
-        </div>
-        <div class="metric-sub">pesos argentinos</div>
-      </div>
+  <div class="metric-card">
+    <div class="metric-label">Ingresos ARS hoy</div>
+    <div class="metric-val">$${totalARS.toLocaleString("es-AR")}</div>
+    <div class="metric-sub">pesos argentinos</div>
+  </div>
 
-      <div class="metric-card">
-        <div class="metric-label">Ingresos USD</div>
-        <div class="metric-val">
-          U$D ${totalUSD.toFixed(2)}
-        </div>
-        <div class="metric-sub">dólares</div>
-      </div>
+  <div class="metric-card">
+    <div class="metric-label">Ingresos USD hoy</div>
+    <div class="metric-val">U$D ${totalUSD.toFixed(2)}</div>
+    <div class="metric-sub">dólares</div>
+  </div>
 
-      <div class="metric-card">
-        <div class="metric-label">Ropa / Accesorios</div>
-        <div class="metric-val">
-          ${ropa} / ${accesorios}
-        </div>
-        <div class="metric-sub">por categoría</div>
-      </div>
-    `;
+  <div class="metric-card">
+    <div class="metric-label">Ropa / Accesorios</div>
+    <div class="metric-val">${ropa} / ${accesorios}</div>
+    <div class="metric-sub">por categoría</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Acumulado total ARS</div>
+    <div class="metric-val">$${acumARS.toLocaleString("es-AR")}</div>
+    <div class="metric-sub">todos los tiempos</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Acumulado total USD</div>
+    <div class="metric-val">U$D ${acumUSD.toFixed(2)}</div>
+    <div class="metric-sub">todos los tiempos</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Acumulado total BRL</div>
+    <div class="metric-val">R$ ${acumBRL.toFixed(2)}</div>
+    <div class="metric-sub">todos los tiempos</div>
+  </div>
+`;
   }
 
   if (!ventas.length) {
@@ -513,18 +534,16 @@ async function loadDashboard() {
     return;
   }
 
-  tbody.innerHTML = ventas.map(sale => `
+  tbody.innerHTML = ventas
+    .map(
+      (sale) => `
     <tr>
       <td>${escapeHTML(sale.hora)}</td>
 
       <td>
         ${escapeHTML(sale.producto)}
 
-        ${
-          sale.cantidad
-            ? `<br><small>Cantidad: ${sale.cantidad}</small>`
-            : ''
-        }
+        ${sale.cantidad ? `<br><small>Cantidad: ${sale.cantidad}</small>` : ""}
 
         ${
           sale.nota
@@ -534,15 +553,13 @@ async function loadDashboard() {
                 ${escapeHTML(sale.nota)}
               </span>
             `
-            : ''
+            : ""
         }
       </td>
 
       <td>
         <span class="tag ${
-          sale.categoria === 'Ropa'
-            ? 'tag-ropa'
-            : 'tag-accs'
+          sale.categoria === "Ropa" ? "tag-ropa" : "tag-accs"
         }">
           ${escapeHTML(sale.categoria)}
         </span>
@@ -566,7 +583,9 @@ async function loadDashboard() {
         ${escapeHTML(sale.vendedor)}
       </td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 // ══════════════════════════════════════════════
@@ -574,14 +593,14 @@ async function loadDashboard() {
 // ══════════════════════════════════════════════
 
 async function submitVenta() {
-  const productInput = document.getElementById('v-prod');
-  const quantityInput = document.getElementById('v-cantidad');
-  const currencyInput = document.getElementById('v-cur');
-  const amountInput = document.getElementById('v-amt');
-  const methodInput = document.getElementById('v-met');
-  const noteInput = document.getElementById('v-nota');
-  const errorText = document.getElementById('v-err');
-  const button = document.getElementById('v-btn');
+  const productInput = document.getElementById("v-prod");
+  const quantityInput = document.getElementById("v-cantidad");
+  const currencyInput = document.getElementById("v-cur");
+  const amountInput = document.getElementById("v-amt");
+  const methodInput = document.getElementById("v-met");
+  const noteInput = document.getElementById("v-nota");
+  const errorText = document.getElementById("v-err");
+  const button = document.getElementById("v-btn");
 
   if (
     !productInput ||
@@ -602,17 +621,17 @@ async function submitVenta() {
   const nota = noteInput.value.trim();
 
   if (errorText) {
-    errorText.textContent = '';
+    errorText.textContent = "";
   }
 
   if (!productId) {
-    if (errorText) errorText.textContent = 'Seleccioná un producto.';
+    if (errorText) errorText.textContent = "Seleccioná un producto.";
     return;
   }
 
   if (!Number.isInteger(cantidad) || cantidad <= 0) {
     if (errorText) {
-      errorText.textContent = 'Ingresá una cantidad válida.';
+      errorText.textContent = "Ingresá una cantidad válida.";
     }
 
     return;
@@ -620,24 +639,21 @@ async function submitVenta() {
 
   if (!Number.isFinite(monto) || monto <= 0) {
     if (errorText) {
-      errorText.textContent = 'Ingresá un monto válido.';
+      errorText.textContent = "Ingresá un monto válido.";
     }
 
     return;
   }
 
-  const {
-    data: producto,
-    error: stockError
-  } = await sb
-    .from('stock')
-    .select('*')
-    .eq('id', productId)
+  const { data: producto, error: stockError } = await sb
+    .from("stock")
+    .select("*")
+    .eq("id", productId)
     .single();
 
   if (stockError || !producto) {
     if (errorText) {
-      errorText.textContent = 'No se pudo encontrar el producto.';
+      errorText.textContent = "No se pudo encontrar el producto.";
     }
 
     return;
@@ -645,21 +661,19 @@ async function submitVenta() {
 
   if (Number(producto.cantidad) < cantidad) {
     if (errorText) {
-      errorText.textContent =
-        `Stock insuficiente. Disponible: ${producto.cantidad}.`;
+      errorText.textContent = `Stock insuficiente. Disponible: ${producto.cantidad}.`;
     }
 
     return;
   }
 
   if (button) {
-    button.textContent = 'Guardando...';
+    button.textContent = "Guardando...";
     button.disabled = true;
   }
 
-  const { error: ventaError } = await sb
-    .from('ventas')
-    .insert([{
+  const { error: ventaError } = await sb.from("ventas").insert([
+    {
       fecha: todayStr(),
       hora: nowTime(),
       producto_id: producto.id,
@@ -670,18 +684,18 @@ async function submitVenta() {
       monto,
       metodo,
       nota: nota || null,
-      vendedor: currentUser ? currentUser.display : 'Sin vendedor'
-    }]);
+      vendedor: currentUser ? currentUser.display : "Sin vendedor",
+    },
+  ]);
 
   if (ventaError) {
     if (button) {
-      button.textContent = 'Registrar venta';
+      button.textContent = "Registrar venta";
       button.disabled = false;
     }
 
     if (errorText) {
-      errorText.textContent =
-        'Error al guardar la venta. Intentá de nuevo.';
+      errorText.textContent = "Error al guardar la venta. Intentá de nuevo.";
     }
 
     console.error(ventaError);
@@ -689,21 +703,21 @@ async function submitVenta() {
   }
 
   const { error: updateError } = await sb
-    .from('stock')
+    .from("stock")
     .update({
-      cantidad: Number(producto.cantidad) - cantidad
+      cantidad: Number(producto.cantidad) - cantidad,
     })
-    .eq('id', producto.id);
+    .eq("id", producto.id);
 
   if (updateError) {
     if (button) {
-      button.textContent = 'Registrar venta';
+      button.textContent = "Registrar venta";
       button.disabled = false;
     }
 
     if (errorText) {
       errorText.textContent =
-        'La venta se guardó, pero no se pudo actualizar el stock.';
+        "La venta se guardó, pero no se pudo actualizar el stock.";
     }
 
     console.error(updateError);
@@ -711,24 +725,24 @@ async function submitVenta() {
   }
 
   if (button) {
-    button.textContent = 'Registrar venta';
+    button.textContent = "Registrar venta";
     button.disabled = false;
   }
 
-  productInput.value = '';
-  quantityInput.value = '1';
-  amountInput.value = '';
-  noteInput.value = '';
+  productInput.value = "";
+  quantityInput.value = "1";
+  amountInput.value = "";
+  noteInput.value = "";
 
-  const stockInfo = document.getElementById('v-stock-info');
+  const stockInfo = document.getElementById("v-stock-info");
 
   if (stockInfo) {
-    stockInfo.textContent = 'Seleccioná un producto';
+    stockInfo.textContent = "Seleccioná un producto";
   }
 
   await loadProductOptions();
 
-  showToast('✓ Venta registrada y stock actualizado', 'ok');
+  showToast("✓ Venta registrada y stock actualizado", "ok");
 
   await loadDashboard();
 }
@@ -738,15 +752,15 @@ async function submitVenta() {
 // ══════════════════════════════════════════════
 
 async function loadProductOptions() {
-  const select = document.getElementById('v-prod');
+  const select = document.getElementById("v-prod");
 
   if (!select) return;
 
   const { data, error } = await sb
-    .from('stock')
-    .select('*')
-    .order('categoria')
-    .order('nombre');
+    .from("stock")
+    .select("*")
+    .order("categoria")
+    .order("nombre");
 
   if (error) {
     select.innerHTML = `
@@ -769,29 +783,27 @@ async function loadProductOptions() {
     <option value="">Seleccioná un producto</option>
   `;
 
-  data.forEach(product => {
-    const option = document.createElement('option');
+  data.forEach((product) => {
+    const option = document.createElement("option");
 
     option.value = product.id;
     option.dataset.stock = product.cantidad;
 
-    option.textContent =
-      `${product.nombre} — ${product.categoria} — stock: ${product.cantidad}`;
+    option.textContent = `${product.nombre} — ${product.categoria} — stock: ${product.cantidad}`;
 
     select.appendChild(option);
   });
 
   select.onchange = () => {
     const selectedOption = select.options[select.selectedIndex];
-    const stockInfo = document.getElementById('v-stock-info');
+    const stockInfo = document.getElementById("v-stock-info");
 
     if (!stockInfo) return;
 
     if (selectedOption && selectedOption.value) {
-      stockInfo.textContent =
-        `Stock disponible: ${selectedOption.dataset.stock}`;
+      stockInfo.textContent = `Stock disponible: ${selectedOption.dataset.stock}`;
     } else {
-      stockInfo.textContent = 'Seleccioná un producto';
+      stockInfo.textContent = "Seleccioná un producto";
     }
   };
 }
@@ -801,7 +813,7 @@ async function loadProductOptions() {
 // ══════════════════════════════════════════════
 
 async function loadStock() {
-  const wrapper = document.getElementById('stock-cols');
+  const wrapper = document.getElementById("stock-cols");
 
   if (!wrapper) return;
 
@@ -813,10 +825,10 @@ async function loadStock() {
   `;
 
   const { data, error } = await sb
-    .from('stock')
-    .select('*')
-    .order('categoria')
-    .order('nombre');
+    .from("stock")
+    .select("*")
+    .order("categoria")
+    .order("nombre");
 
   if (error) {
     wrapper.innerHTML = `
@@ -830,20 +842,23 @@ async function loadStock() {
   }
 
   const products = data || [];
-  const categories = ['Ropa', 'Accesorios'];
+  const categories = ["Ropa", "Accesorios"];
 
-  wrapper.innerHTML = categories.map(category => {
-    const categoryProducts = products.filter(
-      product => product.categoria === category
-    );
+  wrapper.innerHTML = categories
+    .map((category) => {
+      const categoryProducts = products.filter(
+        (product) => product.categoria === category,
+      );
 
-    return `
+      return `
       <div class="stock-box">
         <h3>${category}</h3>
 
         ${
           categoryProducts.length
-            ? categoryProducts.map(product => `
+            ? categoryProducts
+                .map(
+                  (product) => `
               <div class="stock-row">
                 <span class="stock-name">
                   ${escapeHTML(product.nombre)}
@@ -858,7 +873,7 @@ async function loadStock() {
                   </button>
 
                   <span class="stock-qty ${
-                    Number(product.cantidad) <= 2 ? 'low' : ''
+                    Number(product.cantidad) <= 2 ? "low" : ""
                   }">
                     ${product.cantidad}
                   </span>
@@ -879,7 +894,9 @@ async function loadStock() {
                   </button>
                 </div>
               </div>
-            `).join('')
+            `,
+                )
+                .join("")
             : '<p class="empty">No hay productos cargados.</p>'
         }
 
@@ -909,35 +926,33 @@ async function loadStock() {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join("");
 }
 
 async function changeStock(id, delta) {
   const { data, error } = await sb
-    .from('stock')
-    .select('cantidad')
-    .eq('id', id)
+    .from("stock")
+    .select("cantidad")
+    .eq("id", id)
     .single();
 
   if (error || !data) {
-    showToast('No se pudo consultar el stock', 'fail');
+    showToast("No se pudo consultar el stock", "fail");
     return;
   }
 
-  const newQuantity = Math.max(
-    0,
-    Number(data.cantidad) + delta
-  );
+  const newQuantity = Math.max(0, Number(data.cantidad) + delta);
 
   const { error: updateError } = await sb
-    .from('stock')
+    .from("stock")
     .update({
-      cantidad: newQuantity
+      cantidad: newQuantity,
     })
-    .eq('id', id);
+    .eq("id", id);
 
   if (updateError) {
-    showToast('No se pudo actualizar el stock', 'fail');
+    showToast("No se pudo actualizar el stock", "fail");
     console.error(updateError);
     return;
   }
@@ -947,17 +962,14 @@ async function changeStock(id, delta) {
 }
 
 async function deleteStock(id) {
-  if (!confirm('¿Eliminar este producto del stock?')) {
+  if (!confirm("¿Eliminar este producto del stock?")) {
     return;
   }
 
-  const { error } = await sb
-    .from('stock')
-    .delete()
-    .eq('id', id);
+  const { error } = await sb.from("stock").delete().eq("id", id);
 
   if (error) {
-    showToast('No se pudo eliminar el producto', 'fail');
+    showToast("No se pudo eliminar el producto", "fail");
     console.error(error);
     return;
   }
@@ -965,12 +977,12 @@ async function deleteStock(id) {
   await loadStock();
   await loadProductOptions();
 
-  showToast('Producto eliminado', 'ok');
+  showToast("Producto eliminado", "ok");
 }
 
 async function addStock(category) {
-  const nameInput = document.getElementById('new-' + category);
-  const quantityInput = document.getElementById('qty-' + category);
+  const nameInput = document.getElementById("new-" + category);
+  const quantityInput = document.getElementById("qty-" + category);
 
   if (!nameInput || !quantityInput) {
     return;
@@ -980,36 +992,36 @@ async function addStock(category) {
   const quantity = parseInt(quantityInput.value, 10);
 
   if (!name) {
-    showToast('Ingresá el nombre del producto', 'fail');
+    showToast("Ingresá el nombre del producto", "fail");
     return;
   }
 
   if (!Number.isInteger(quantity) || quantity < 0) {
-    showToast('Ingresá una cantidad válida', 'fail');
+    showToast("Ingresá una cantidad válida", "fail");
     return;
   }
 
-  const { error } = await sb
-    .from('stock')
-    .insert([{
+  const { error } = await sb.from("stock").insert([
+    {
       nombre: name,
       categoria: category,
-      cantidad: quantity
-    }]);
+      cantidad: quantity,
+    },
+  ]);
 
   if (error) {
-    showToast('No se pudo agregar el producto', 'fail');
+    showToast("No se pudo agregar el producto", "fail");
     console.error(error);
     return;
   }
 
-  nameInput.value = '';
-  quantityInput.value = '0';
+  nameInput.value = "";
+  quantityInput.value = "0";
 
   await loadStock();
   await loadProductOptions();
 
-  showToast('Producto agregado correctamente', 'ok');
+  showToast("Producto agregado correctamente", "ok");
 }
 
 // ══════════════════════════════════════════════
@@ -1017,7 +1029,7 @@ async function addStock(category) {
 // ══════════════════════════════════════════════
 
 async function loadHistorial() {
-  const tbody = document.getElementById('hist-tbody');
+  const tbody = document.getElementById("hist-tbody");
 
   if (!tbody) return;
 
@@ -1032,37 +1044,34 @@ async function loadHistorial() {
     </tr>
   `;
 
-  const vendorFilter =
-    document.getElementById('f-vend')?.value || '';
+  const vendorFilter = document.getElementById("f-vend")?.value || "";
 
-  const categoryFilter =
-    document.getElementById('f-cat')?.value || '';
+  const categoryFilter = document.getElementById("f-cat")?.value || "";
 
-  const currencyFilter =
-    document.getElementById('f-cur')?.value || '';
+  const currencyFilter = document.getElementById("f-cur")?.value || "";
 
   let query = sb
-    .from('ventas')
-    .select('*')
-    .order('created_at', { ascending: false })
+    .from("ventas")
+    .select("*")
+    .order("created_at", { ascending: false })
     .limit(200);
 
   if (vendorFilter) {
-    query = query.eq('vendedor', vendorFilter);
+    query = query.eq("vendedor", vendorFilter);
   }
 
   if (categoryFilter) {
-    query = query.eq('categoria', categoryFilter);
+    query = query.eq("categoria", categoryFilter);
   }
 
   if (currencyFilter) {
-    query = query.eq('moneda', currencyFilter);
+    query = query.eq("moneda", currencyFilter);
   }
 
   const { data, error } = await query;
 
   if (error) {
-    showToast('Error al cargar historial', 'fail');
+    showToast("Error al cargar historial", "fail");
     console.error(error);
     return;
   }
@@ -1079,7 +1088,9 @@ async function loadHistorial() {
     return;
   }
 
-  tbody.innerHTML = data.map(sale => `
+  tbody.innerHTML = data
+    .map(
+      (sale) => `
     <tr>
       <td style="font-size:12px;color:var(--text2)">
         ${escapeHTML(sale.fecha)} ${escapeHTML(sale.hora)}
@@ -1088,11 +1099,7 @@ async function loadHistorial() {
       <td>
         ${escapeHTML(sale.producto)}
 
-        ${
-          sale.cantidad
-            ? `<br><small>Cantidad: ${sale.cantidad}</small>`
-            : ''
-        }
+        ${sale.cantidad ? `<br><small>Cantidad: ${sale.cantidad}</small>` : ""}
 
         ${
           sale.nota
@@ -1102,15 +1109,13 @@ async function loadHistorial() {
                 ${escapeHTML(sale.nota)}
               </span>
             `
-            : ''
+            : ""
         }
       </td>
 
       <td>
         <span class="tag ${
-          sale.categoria === 'Ropa'
-            ? 'tag-ropa'
-            : 'tag-accs'
+          sale.categoria === "Ropa" ? "tag-ropa" : "tag-accs"
         }">
           ${escapeHTML(sale.categoria)}
         </span>
@@ -1134,13 +1139,15 @@ async function loadHistorial() {
         ${escapeHTML(sale.vendedor)}
       </td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 // ══════════════════════════════════════════════
 // INICIALIZACIÓN
 // ══════════════════════════════════════════════
 
-document.addEventListener('DOMContentLoaded', () => {
-  showScreen('screen-login');
+document.addEventListener("DOMContentLoaded", () => {
+  showScreen("screen-login");
 });
