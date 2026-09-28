@@ -391,28 +391,21 @@ function goTab(tab, btn) {
     tabButton.classList.remove("active");
   });
 
-  if (tab === 'cubitos') loadCubitos();
-  
-  if (btn) {
-    btn.classList.add("active");
-  }
+  if (btn) btn.classList.add("active");
 
   document.querySelectorAll(".tab-content").forEach((content) => {
     content.classList.remove("active");
   });
 
   const selectedTab = document.getElementById("tab-" + tab);
-
-  if (selectedTab) {
-    selectedTab.classList.add("active");
-  }
+  if (selectedTab) selectedTab.classList.add("active");
 
   if (tab === "dashboard") loadDashboard();
   if (tab === "stock") loadStock();
   if (tab === "historial") loadHistorial();
   if (tab === "usuarios") loadUsuarios();
+  if (tab === "cubitos") loadCubitos();
 }
-
 // ══════════════════════════════════════════════
 // DASHBOARD
 // ══════════════════════════════════════════════
