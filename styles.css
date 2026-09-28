@@ -398,9 +398,9 @@ tbody tr:hover {
 
 /* ── STOCK ── */
 .stock-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 .stock-box {
   background: var(--surface);
@@ -483,35 +483,6 @@ tbody tr:hover {
 .add-row input::placeholder {
   color: var(--text3);
 }
-.btn-outline {
-  border: 1px solid var(--accent);
-  background: none;
-  color: var(--accent2);
-  padding: 8px 14px;
-  border-radius: var(--radius2);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.btn-outline:hover {
-  background: rgba(108, 99, 255, 0.1);
-}
-.btn-del {
-  background: none;
-  border: none;
-  color: var(--text3);
-  cursor: pointer;
-  font-size: 15px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: color 0.15s;
-}
-.btn-del:hover {
-  color: var(--red);
-}
-
 /* ── FILTERS ── */
 .filters {
   display: flex;

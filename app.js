@@ -814,15 +814,9 @@ async function loadProductOptions() {
 
 async function loadStock() {
   const wrapper = document.getElementById("stock-cols");
-
   if (!wrapper) return;
 
-  wrapper.innerHTML = `
-    <div class="loader">
-      <div class="spinner"></div>
-      Cargando...
-    </div>
-  `;
+  wrapper.innerHTML = `<div class="loader"><div class="spinner"></div> Cargando...</div>`;
 
   const { data, error } = await sb
     .from("stock")
@@ -831,12 +825,7 @@ async function loadStock() {
     .order("nombre");
 
   if (error) {
-    wrapper.innerHTML = `
-      <p style="color:var(--red);padding:16px">
-        Error al cargar stock.
-      </p>
-    `;
-
+    wrapper.innerHTML = `<p style="color:var(--red);padding:16px">Error al cargar stock.</p>`;
     console.error(error);
     return;
   }
@@ -844,90 +833,72 @@ async function loadStock() {
   const products = data || [];
   const categories = ["Ropa", "Accesorios"];
 
-  wrapper.innerHTML = categories
-    .map((category) => {
-      const categoryProducts = products.filter(
-        (product) => product.categoria === category,
-      );
-
-      return `
-      <div class="stock-box">
-        <h3>${category}</h3>
-
-        ${
-          categoryProducts.length
-            ? categoryProducts
-                .map(
-                  (product) => `
-              <div class="stock-row">
-                <span class="stock-name">
-                  ${escapeHTML(product.nombre)}
-                </span>
-
-                <div class="stock-controls">
-                  <button
-                    class="btn-qty"
-                    onclick="changeStock(${product.id}, -1)"
-                  >
-                    −
-                  </button>
-
-                  <span class="stock-qty ${
-                    Number(product.cantidad) <= 2 ? "low" : ""
-                  }">
-                    ${product.cantidad}
-                  </span>
-
-                  <button
-                    class="btn-qty"
-                    onclick="changeStock(${product.id}, 1)"
-                  >
-                    +
-                  </button>
-
-                  <button
-                    class="btn-del"
-                    onclick="deleteStock(${product.id})"
-                    title="Eliminar"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            `,
-                )
-                .join("")
-            : '<p class="empty">No hay productos cargados.</p>'
-        }
-
-        <div class="add-row">
-          <input
-            type="text"
-            id="new-${category}"
-            placeholder="Nuevo producto..."
-          />
-
-          <input
-            type="number"
-            id="qty-${category}"
-            min="0"
-            step="1"
-            value="0"
-            placeholder="Cantidad"
-            style="max-width:100px"
-          />
-
-          <button
-            class="btn-outline"
-            onclick="addStock('${category}')"
-          >
-            Agregar
-          </button>
+  wrapper.innerHTML = `
+    <div class="stock-search-wrap">
+      <input
+        class="stock-search"
+        id="stock-search"
+        type="text"
+        placeholder="🔍 Buscar producto..."
+        oninput="filterStock()"
+      >
+    </div>
+    ${categories
+      .map((category) => {
+        const items = products.filter((p) => p.categoria === category);
+        return `
+        <div class="stock-section" data-category="${category}">
+          <p class="stock-category-title">${category}</p>
+          <div class="stock-grid-cards" id="grid-${category}">
+            ${items.length ? items.map((p) => stockCardHTML(p)).join("") : '<p class="empty">Sin productos.</p>'}
+          </div>
+          <div class="add-row">
+            <input type="text" id="new-${category}" placeholder="Nuevo producto...">
+            <input type="number" id="qty-${category}" min="0" value="0" placeholder="Cantidad" style="max-width:90px">
+            <button class="btn-outline" onclick="addStock('${category}')">Agregar</button>
+          </div>
         </div>
+      `;
+      })
+      .join("")}
+  `;
+
+  // guardar lista completa para el filtro
+  window._stockData = products;
+}
+
+function stockCardHTML(p) {
+  return `
+    <div class="stock-card ${Number(p.cantidad) <= 2 ? "low-stock" : ""}" data-name="${p.nombre.toLowerCase()}">
+      <div class="stock-card-name">${escapeHTML(p.nombre)}</div>
+      <div class="stock-card-qty ${Number(p.cantidad) <= 2 ? "low" : ""}">${p.cantidad}</div>
+      <div class="stock-card-controls">
+        <button class="btn-qty" onclick="changeStock(${p.id}, -1)">−</button>
+        <button class="btn-qty" onclick="changeStock(${p.id}, 1)">+</button>
+        <button class="btn-del" onclick="deleteStock(${p.id})" title="Eliminar">×</button>
       </div>
-    `;
-    })
-    .join("");
+    </div>
+  `;
+}
+
+function filterStock() {
+  const query =
+    document.getElementById("stock-search")?.value.toLowerCase().trim() || "";
+  const products = window._stockData || [];
+  const categories = ["Ropa", "Accesorios"];
+
+  categories.forEach((category) => {
+    const grid = document.getElementById("grid-" + category);
+    if (!grid) return;
+
+    const filtered = products.filter(
+      (p) => p.categoria === category && p.nombre.toLowerCase().includes(query),
+    );
+
+    grid.innerHTML = filtered.length
+      ? filtered.map((p) => stockCardHTML(p)).join("")
+      : '<p class="empty">Sin resultados.</p>';
+  });
 }
 
 async function changeStock(id, delta) {
