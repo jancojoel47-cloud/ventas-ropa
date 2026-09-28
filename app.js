@@ -753,8 +753,8 @@ async function submitVenta() {
 
 async function loadProductOptions() {
   const select = document.getElementById("v-prod");
-  const catSelect = document.getElementById("v-cat");
-  if (!select || !catSelect) return;
+
+  if (!select) return;
 
   const { data, error } = await sb
     .from("stock")
@@ -763,54 +763,51 @@ async function loadProductOptions() {
     .order("nombre");
 
   if (error) {
-    select.innerHTML = `<option value="">Error al cargar productos</option>`;
+    select.innerHTML = `
+      <option value="">Error al cargar productos</option>
+    `;
+
     console.error(error);
     return;
   }
 
-  window._allProducts = data || [];
+  if (!data || !data.length) {
+    select.innerHTML = `
+      <option value="">No hay productos cargados</option>
+    `;
 
-  // Filtrar por categoría seleccionada
-  function renderProducts() {
-    const cat = catSelect.value;
-    const filtered = cat
-      ? window._allProducts.filter((p) => p.categoria === cat)
-      : window._allProducts;
-
-    if (!filtered.length) {
-      select.innerHTML = `<option value="">Sin productos en esta categoría</option>`;
-      return;
-    }
-
-    select.innerHTML = `<option value="">Seleccioná un producto</option>`;
-    filtered.forEach((product) => {
-      const option = document.createElement("option");
-      option.value = product.id;
-      option.dataset.stock = product.cantidad;
-      option.textContent = `${product.nombre} — stock: ${product.cantidad}`;
-      select.appendChild(option);
-    });
-
-    // Actualizar info de stock al cambiar producto
-    select.onchange = () => {
-      const selected = select.options[select.selectedIndex];
-      const stockInfo = document.getElementById("v-stock-info");
-      if (!stockInfo) return;
-      stockInfo.textContent = selected?.value
-        ? `Stock disponible: ${selected.dataset.stock}`
-        : "Seleccioná un producto";
-    };
+    return;
   }
 
-  // Renderizar al cargar y al cambiar categoría
-  renderProducts();
-  catSelect.onchange = () => {
-    select.value = "";
+  select.innerHTML = `
+    <option value="">Seleccioná un producto</option>
+  `;
+
+  data.forEach((product) => {
+    const option = document.createElement("option");
+
+    option.value = product.id;
+    option.dataset.stock = product.cantidad;
+
+    option.textContent = `${product.nombre} — ${product.categoria} — stock: ${product.cantidad}`;
+
+    select.appendChild(option);
+  });
+
+  select.onchange = () => {
+    const selectedOption = select.options[select.selectedIndex];
     const stockInfo = document.getElementById("v-stock-info");
-    if (stockInfo) stockInfo.textContent = "Seleccioná un producto";
-    renderProducts();
+
+    if (!stockInfo) return;
+
+    if (selectedOption && selectedOption.value) {
+      stockInfo.textContent = `Stock disponible: ${selectedOption.dataset.stock}`;
+    } else {
+      stockInfo.textContent = "Seleccioná un producto";
+    }
   };
 }
+
 // ══════════════════════════════════════════════
 // STOCK
 // ══════════════════════════════════════════════
