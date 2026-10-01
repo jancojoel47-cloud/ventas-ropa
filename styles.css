@@ -3123,3 +3123,1658 @@ body.producto-modal-open {
     min-height: 120px !important;
   }
 }
+
+```css
+/* =========================================================
+   NUEVO LOGIN — GLASS / TRANSPARENTE
+   Solo afecta #screen-login
+   ========================================================= */
+
+#screen-login {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(212, 175, 55, 0.10),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 15% 85%,
+      rgba(212, 175, 55, 0.06),
+      transparent 30%
+    ),
+    #070809 !important;
+}
+
+/* Luces ambientales */
+#screen-login::before {
+  content: "";
+  position: absolute;
+
+  width: 500px;
+  height: 500px;
+
+  top: -220px;
+  left: -180px;
+
+  background: rgba(212, 175, 55, 0.07);
+  border-radius: 50%;
+
+  filter: blur(100px);
+  pointer-events: none;
+}
+
+#screen-login::after {
+  content: "";
+  position: absolute;
+
+  width: 450px;
+  height: 450px;
+
+  right: -180px;
+  bottom: -200px;
+
+  background: rgba(212, 175, 55, 0.06);
+  border-radius: 50%;
+
+  filter: blur(100px);
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   CONTENEDOR
+   ========================================================= */
+
+#screen-login .login-page {
+  position: relative;
+  z-index: 2;
+
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px 20px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CAJA
+   ========================================================= */
+
+#screen-login .login-box {
+  width: 100%;
+  max-width: 430px;
+
+  display: flex;
+  justify-content: center;
+}
+
+
+/* =========================================================
+   TARJETA TRANSPARENTE
+   ========================================================= */
+
+#screen-login .login-card {
+  position: relative;
+
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 42px 40px 30px;
+
+  border-radius: 24px;
+
+  background: rgba(255, 255, 255, 0.055);
+
+  border: 1px solid rgba(255, 255, 255, 0.13);
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+
+/* Línea dorada superior */
+#screen-login .login-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 15%;
+  right: 15%;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 175, 55, 0.75),
+    transparent
+  );
+}
+
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+#screen-login .login-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-bottom: 18px;
+}
+
+#screen-login .login-logo img {
+  display: block;
+
+  width: 105px;
+  height: 105px;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(0 0 18px rgba(212, 175, 55, 0.18));
+
+  transition: transform 0.3s ease;
+}
+
+#screen-login .login-logo img:hover {
+  transform: scale(1.035);
+}
+
+
+/* =========================================================
+   MARCA
+   ========================================================= */
+
+#screen-login .login-brand {
+  text-align: center;
+
+  margin-bottom: 32px;
+}
+
+#screen-login .login-brand h1 {
+  margin: 0;
+
+  color: #f1d477;
+
+  font-size: 31px;
+  font-weight: 700;
+
+  letter-spacing: 4px;
+
+  text-shadow:
+    0 0 18px rgba(212, 175, 55, 0.18);
+}
+
+#screen-login .login-brand h1 span {
+  display: none;
+}
+
+#screen-login .login-brand p {
+  margin: 8px 0 0;
+
+  color: rgba(255, 255, 255, 0.55);
+
+  font-size: 13px;
+  letter-spacing: 0.4px;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+#screen-login .field {
+  margin-bottom: 20px;
+}
+
+#screen-login .field label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: rgba(255, 255, 255, 0.72);
+
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#screen-login .field input {
+  width: 100%;
+  height: 50px;
+
+  box-sizing: border-box;
+
+  padding: 0 15px;
+
+  border-radius: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.11);
+
+  background: rgba(0, 0, 0, 0.28);
+
+  color: #ffffff;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#screen-login .field input::placeholder {
+  color: rgba(255, 255, 255, 0.32);
+}
+
+#screen-login .field input:focus {
+  border-color: rgba(212, 175, 55, 0.65);
+
+  background: rgba(0, 0, 0, 0.38);
+
+  box-shadow:
+    0 0 0 3px rgba(212, 175, 55, 0.08);
+}
+
+
+/* =========================================================
+   CONTRASEÑA
+   ========================================================= */
+
+#screen-login .pass-wrap {
+  position: relative;
+}
+
+#screen-login .pass-wrap input {
+  padding-right: 52px;
+}
+
+#screen-login .btn-eye {
+  position: absolute;
+
+  top: 50%;
+  right: 7px;
+
+  transform: translateY(-50%);
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: rgba(255, 255, 255, 0.48);
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+#screen-login .btn-eye:hover {
+  color: #f1d477;
+
+  background: rgba(212, 175, 55, 0.08);
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+#screen-login .err {
+  min-height: 18px;
+
+  margin: 2px 0 12px;
+
+  color: #ff7777;
+
+  text-align: center;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   BOTÓN ENTRAR
+   ========================================================= */
+
+#screen-login .btn.btn-accent {
+  width: 100%;
+  height: 52px;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    #d4af37,
+    #f0cf65
+  );
+
+  color: #111111;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 25px rgba(212, 175, 55, 0.16);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+#screen-login .btn.btn-accent:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.05);
+
+  box-shadow:
+    0 14px 30px rgba(212, 175, 55, 0.24);
+}
+
+#screen-login .btn.btn-accent:active {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
+   PIE
+   ========================================================= */
+
+#screen-login .login-footer {
+  margin-top: 25px;
+
+  text-align: center;
+
+  color: rgba(255, 255, 255, 0.30);
+
+  font-size: 11px;
+
+  letter-spacing: 0.3px;
+}
+
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  #screen-login .login-page {
+    padding: 20px 16px;
+  }
+
+  #screen-login .login-card {
+    padding: 34px 24px 25px;
+
+    border-radius: 20px;
+  }
+
+  #screen-login .login-logo img {
+    width: 88px;
+    height: 88px;
+  }
+
+  #screen-login .login-brand {
+    margin-bottom: 27px;
+  }
+
+  #screen-login .login-brand h1 {
+    font-size: 26px;
+    letter-spacing: 3px;
+  }
+
+  #screen-login .field {
+    margin-bottom: 17px;
+  }
+
+  #screen-login .field input {
+    height: 48px;
+  }
+
+  #screen-login .btn.btn-accent {
+    height: 50px;
+  }
+}
+
+
+/* =========================================================
+   CELULARES MUY PEQUEÑOS
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  #screen-login .login-card {
+    padding: 28px 20px 22px;
+  }
+
+  #screen-login .login-logo img {
+    width: 78px;
+    height: 78px;
+  }
+
+  #screen-login .login-brand h1 {
+    font-size: 23px;
+  }
+
+  #screen-login .login-brand p {
+    font-size: 12px;
+  }
+}
+
+
+```css
+/* =========================================================
+   HORUS / VENTAAPP
+   NUEVO DISEÑO INTERNO — DARK GLASS ADMIN
+   Solo afecta #screen-app
+   ========================================================= */
+
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+#screen-app {
+  background:
+    radial-gradient(
+      circle at 75% 10%,
+      rgba(212, 175, 55, 0.055),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 15% 80%,
+      rgba(212, 175, 55, 0.035),
+      transparent 30%
+    ),
+    #080a0e !important;
+
+  color: var(--text);
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   SHELL
+   ========================================================= */
+
+#screen-app .app-shell {
+  display: flex;
+
+  width: 100%;
+  min-height: 100vh;
+
+  background: transparent;
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+#screen-app .sidebar {
+  position: relative;
+
+  width: 255px;
+  min-width: 255px;
+
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 22px 16px;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(20, 22, 29, 0.96),
+      rgba(10, 12, 17, 0.98)
+    );
+
+  border-right: 1px solid rgba(255, 255, 255, 0.075);
+
+  box-shadow:
+    12px 0 45px rgba(0, 0, 0, 0.22);
+
+  z-index: 10;
+}
+
+
+/* Línea dorada lateral */
+#screen-app .sidebar::after {
+  content: "";
+
+  position: absolute;
+
+  top: 12%;
+  right: -1px;
+
+  width: 1px;
+  height: 76%;
+
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(212, 175, 55, 0.32),
+    transparent
+  );
+}
+
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+#screen-app .sidebar-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 5px 8px 25px;
+
+  margin-bottom: 10px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+#screen-app .sidebar-brand img {
+  width: 43px;
+  height: 43px;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(0 0 12px rgba(212, 175, 55, 0.14));
+}
+
+#screen-app .sidebar-brand strong {
+  display: block;
+
+  color: #f0d16c;
+
+  font-size: 18px;
+
+  letter-spacing: 2px;
+
+  line-height: 1.1;
+}
+
+#screen-app .sidebar-brand small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: rgba(255, 255, 255, 0.36);
+
+  font-size: 10px;
+
+  letter-spacing: 0.6px;
+}
+
+
+/* =========================================================
+   CAPTION
+   ========================================================= */
+
+#screen-app .nav-caption {
+  margin: 17px 9px 9px;
+
+  color: rgba(255, 255, 255, 0.30);
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+}
+
+
+/* =========================================================
+   SIDEBAR NAV
+   ========================================================= */
+
+#screen-app .sidebar-nav {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+#screen-app .sidebar .nav-tab {
+  position: relative;
+
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 11px 12px;
+
+  border: 1px solid transparent;
+  border-radius: 11px;
+
+  background: transparent;
+
+  color: rgba(255, 255, 255, 0.52);
+
+  font-size: 13px;
+  font-weight: 500;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+#screen-app .sidebar .nav-tab:hover {
+  color: rgba(255, 255, 255, 0.88);
+
+  background: rgba(255, 255, 255, 0.045);
+
+  border-color: rgba(255, 255, 255, 0.055);
+
+  transform: translateX(2px);
+}
+
+
+/* Activo */
+#screen-app .sidebar .nav-tab.active {
+  color: #f1d477;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(212, 175, 55, 0.13),
+      rgba(212, 175, 55, 0.045)
+    );
+
+  border-color: rgba(212, 175, 55, 0.18);
+
+  box-shadow:
+    inset 0 0 25px rgba(212, 175, 55, 0.025);
+}
+
+
+/* Línea del activo */
+#screen-app .sidebar .nav-tab.active::before {
+  content: "";
+
+  position: absolute;
+
+  left: -16px;
+  top: 9px;
+  bottom: 9px;
+
+  width: 3px;
+
+  border-radius: 0 3px 3px 0;
+
+  background: #d4af37;
+
+  box-shadow:
+    0 0 12px rgba(212, 175, 55, 0.42);
+}
+
+
+/* Iconos */
+#screen-app .nav-icon {
+  width: 29px;
+  height: 29px;
+
+  flex: 0 0 29px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: rgba(255, 255, 255, 0.45);
+
+  font-size: 15px;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+#screen-app .nav-tab.active .nav-icon {
+  background: rgba(212, 175, 55, 0.12);
+
+  color: #f1d477;
+}
+
+
+/* =========================================================
+   SIDEBAR BOTTOM
+   ========================================================= */
+
+#screen-app .sidebar-bottom {
+  margin-top: auto;
+
+  padding-top: 18px;
+}
+
+
+/* Usuario */
+#screen-app .sidebar-user {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px;
+
+  margin-bottom: 9px;
+
+  border: 1px solid rgba(255, 255, 255, 0.065);
+
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+#screen-app .user-avatar {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #d4af37,
+      #a98620
+    );
+
+  color: #151515;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+#screen-app .sidebar-user strong {
+  display: block;
+
+  color: rgba(255, 255, 255, 0.82);
+
+  font-size: 12px;
+}
+
+#screen-app .sidebar-user small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: rgba(255, 255, 255, 0.32);
+
+  font-size: 10px;
+}
+
+
+/* Logout */
+#screen-app .logout-btn {
+  width: 100%;
+
+  padding: 10px 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.02);
+
+  color: rgba(255, 255, 255, 0.40);
+
+  font-size: 11px;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+#screen-app .logout-btn:hover {
+  color: #ff8585;
+
+  background: rgba(255, 70, 70, 0.055);
+
+  border-color: rgba(255, 90, 90, 0.13);
+}
+
+
+/* =========================================================
+   CONTENIDO PRINCIPAL
+   ========================================================= */
+
+#screen-app .app-content {
+  position: relative;
+
+  flex: 1;
+
+  min-width: 0;
+
+  height: 100vh;
+
+  overflow-y: auto;
+
+  padding: 34px 40px 50px;
+
+  box-sizing: border-box;
+}
+
+
+/* Scroll */
+#screen-app .app-content::-webkit-scrollbar {
+  width: 7px;
+}
+
+#screen-app .app-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#screen-app .app-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.09);
+
+  border-radius: 10px;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+#screen-app .content-header {
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 28px;
+
+  margin-bottom: 5px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+#screen-app .eyebrow {
+  margin: 0 0 7px;
+
+  color: #c9a936;
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 1.7px;
+}
+
+#screen-app .content-header h1 {
+  margin: 0;
+
+  color: #f2f3f5;
+
+  font-size: 28px;
+
+  font-weight: 600;
+
+  letter-spacing: -0.6px;
+}
+
+#screen-app .header-subtitle {
+  margin: 7px 0 0;
+
+  color: rgba(255, 255, 255, 0.39);
+
+  font-size: 12px;
+}
+
+
+/* Usuario arriba */
+#screen-app .header-user {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 9px 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.075);
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  color: rgba(255, 255, 255, 0.60);
+
+  font-size: 11px;
+}
+
+#screen-app .status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #63c98b;
+
+  box-shadow:
+    0 0 9px rgba(99, 201, 139, 0.55);
+}
+
+
+/* =========================================================
+   MOBILE NAV
+   ========================================================= */
+
+#screen-app .mobile-nav {
+  display: none;
+}
+
+
+/* =========================================================
+   TAB CONTENT
+   ========================================================= */
+
+#screen-app .tab-content {
+  padding-top: 30px;
+}
+
+
+/* =========================================================
+   TITULOS DE PÁGINA
+   ========================================================= */
+
+#screen-app .page-title {
+  margin-bottom: 25px;
+}
+
+#screen-app .page-title h2,
+#screen-app .section-hd h2 {
+  margin: 0;
+
+  color: #f0f1f3;
+
+  font-size: 21px;
+
+  font-weight: 600;
+
+  letter-spacing: -0.3px;
+}
+
+#screen-app .page-title > p:not(.eyebrow) {
+  margin: 7px 0 0;
+
+  color: rgba(255, 255, 255, 0.38);
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   SECCIONES
+   ========================================================= */
+
+#screen-app .section-hd {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin: 30px 0 16px;
+}
+
+
+/* =========================================================
+   MÉTRICAS
+   ========================================================= */
+
+#screen-app .metrics {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 28px;
+}
+
+#screen-app .metrics > * {
+  min-width: 0;
+}
+
+
+/* =========================================================
+   TARJETAS
+   ========================================================= */
+
+#screen-app .metric-card,
+#screen-app .form-card,
+#screen-app .stock-add-panel,
+#screen-app .users-grid > *,
+#screen-app .table-wrap {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.018)
+    );
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.18);
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+
+/* =========================================================
+   FORM CARD
+   ========================================================= */
+
+#screen-app .form-card {
+  border-radius: 17px;
+
+  padding: 25px;
+}
+
+#screen-app .form-card h2 {
+  margin: 0 0 22px;
+
+  color: rgba(255, 255, 255, 0.90);
+
+  font-size: 17px;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+#screen-app .field label {
+  color: rgba(255, 255, 255, 0.58);
+
+  font-size: 11px;
+
+  font-weight: 500;
+}
+
+#screen-app .field input,
+#screen-app .field select,
+#screen-app .field textarea,
+#screen-app .filter-sel,
+#screen-app .stock-field input,
+#screen-app .stock-field select {
+  border: 1px solid rgba(255, 255, 255, 0.085);
+
+  border-radius: 10px;
+
+  background: rgba(0, 0, 0, 0.25);
+
+  color: rgba(255, 255, 255, 0.86);
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#screen-app .field input:focus,
+#screen-app .field select:focus,
+#screen-app .field textarea:focus,
+#screen-app .filter-sel:focus,
+#screen-app .stock-field input:focus,
+#screen-app .stock-field select:focus {
+  border-color: rgba(212, 175, 55, 0.48);
+
+  background: rgba(0, 0, 0, 0.34);
+
+  box-shadow:
+    0 0 0 3px rgba(212, 175, 55, 0.055);
+}
+
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+
+#screen-app .btn.btn-accent {
+  border: 0;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #d4af37,
+      #efcf67
+    );
+
+  color: #151515;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 9px 24px rgba(212, 175, 55, 0.12);
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#screen-app .btn.btn-accent:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.05);
+
+  box-shadow:
+    0 13px 28px rgba(212, 175, 55, 0.19);
+}
+
+
+#screen-app .btn-sm {
+  border: 1px solid rgba(212, 175, 55, 0.20);
+
+  border-radius: 9px;
+
+  background: rgba(212, 175, 55, 0.055);
+
+  color: #d9ba4d;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+#screen-app .btn-sm:hover {
+  background: rgba(212, 175, 55, 0.10);
+
+  border-color: rgba(212, 175, 55, 0.34);
+}
+
+
+/* =========================================================
+   TABLAS
+   ========================================================= */
+
+#screen-app .table-wrap {
+  border-radius: 15px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#screen-app table {
+  border-collapse: collapse;
+}
+
+#screen-app table thead th {
+  background: rgba(255, 255, 255, 0.025);
+
+  color: rgba(255, 255, 255, 0.34);
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+#screen-app table tbody td {
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+
+  color: rgba(255, 255, 255, 0.63);
+
+  font-size: 11px;
+}
+
+#screen-app table tbody tr {
+  transition: background 0.15s ease;
+}
+
+#screen-app table tbody tr:hover {
+  background: rgba(212, 175, 55, 0.025);
+}
+
+
+/* =========================================================
+   STOCK
+   ========================================================= */
+
+#screen-app .stock-add-panel {
+  border-radius: 17px;
+
+  padding: 24px;
+
+  margin-bottom: 22px;
+}
+
+#screen-app .stock-add-heading h3 {
+  margin: 3px 0 5px;
+
+  color: rgba(255, 255, 255, 0.90);
+
+  font-size: 18px;
+}
+
+#screen-app .stock-add-heading p {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.36);
+
+  font-size: 11px;
+}
+
+#screen-app .stock-add-eyebrow {
+  color: #c9a936;
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+}
+
+#screen-app .stock-search-box {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+
+  border-radius: 11px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+
+/* =========================================================
+   PRODUCTO SELECCIONADO EN VENTAS
+   ========================================================= */
+
+#screen-app .venta-producto-selector,
+#screen-app .venta-producto-selected {
+  border: 1px solid rgba(255, 255, 255, 0.085);
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.018)
+    );
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+#screen-app .venta-producto-selector:hover {
+  border-color: rgba(212, 175, 55, 0.28);
+
+  background: rgba(212, 175, 55, 0.035);
+}
+
+#screen-app .venta-producto-placeholder-icon {
+  color: #d4af37;
+}
+
+#screen-app .venta-producto-arrow {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+
+/* =========================================================
+   MODAL DE PRODUCTOS
+   ========================================================= */
+
+#screen-app .producto-modal-box {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(24, 26, 33, 0.98),
+      rgba(10, 12, 17, 0.99)
+    );
+
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.65);
+
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+}
+
+
+/* =========================================================
+   FILTROS PRODUCTOS
+   ========================================================= */
+
+#screen-app .producto-filter {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  color: rgba(255, 255, 255, 0.46);
+}
+
+#screen-app .producto-filter.active {
+  border-color: rgba(212, 175, 55, 0.30);
+
+  background: rgba(212, 175, 55, 0.10);
+
+  color: #e4c75d;
+}
+
+
+/* =========================================================
+   USUARIOS
+   ========================================================= */
+
+#screen-app .users-grid > * {
+  border-radius: 14px;
+}
+
+
+/* =========================================================
+   CUBITOS
+   ========================================================= */
+
+#screen-app #tab-cubitos .form-card {
+  border-radius: 17px;
+}
+
+#screen-app #tab-cubitos .btn-green {
+  border-radius: 10px;
+}
+
+
+/* =========================================================
+   RESPONSIVE — PANTALLAS MEDIANAS
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+  #screen-app .sidebar {
+    width: 225px;
+    min-width: 225px;
+  }
+
+  #screen-app .app-content {
+    padding: 30px 27px 45px;
+  }
+
+  #screen-app .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLET / CELULAR
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+  #screen-app {
+    overflow: auto;
+  }
+
+  #screen-app .app-shell {
+    display: block;
+  }
+
+  /* Sidebar pasa a cabecera */
+  #screen-app .sidebar {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+
+    padding: 13px 15px;
+
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
+  }
+
+  #screen-app .sidebar::after {
+    display: none;
+  }
+
+  #screen-app .sidebar-brand {
+    padding: 0 4px 11px;
+
+    margin: 0;
+  }
+
+  #screen-app .sidebar-brand img {
+    width: 38px;
+    height: 38px;
+  }
+
+  #screen-app .sidebar-nav {
+    display: none;
+  }
+
+  #screen-app .sidebar-bottom {
+    display: none;
+  }
+
+  /* Navegación móvil */
+  #screen-app .mobile-nav {
+    position: sticky;
+    top: 0;
+
+    z-index: 20;
+
+    display: flex;
+
+    gap: 6px;
+
+    padding: 10px;
+
+    margin: 0 -1px;
+
+    overflow-x: auto;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+
+    background: rgba(8, 10, 14, 0.88);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  #screen-app .mobile-nav .nav-tab {
+    flex: 0 0 auto;
+
+    padding: 9px 13px;
+
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
+    border-radius: 9px;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    color: rgba(255, 255, 255, 0.48);
+
+    font-size: 11px;
+
+    white-space: nowrap;
+  }
+
+  #screen-app .mobile-nav .nav-tab.active {
+    border-color: rgba(212, 175, 55, 0.28);
+
+    background: rgba(212, 175, 55, 0.10);
+
+    color: #e4c75d;
+  }
+
+  #screen-app .app-content {
+    height: auto;
+
+    min-height: calc(100vh - 65px);
+
+    padding: 20px 16px 40px;
+  }
+
+  #screen-app .content-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    padding-bottom: 20px;
+  }
+
+  #screen-app .content-header h1 {
+    font-size: 23px;
+  }
+
+  #screen-app .header-user {
+    align-self: flex-start;
+  }
+
+  #screen-app .tab-content {
+    padding-top: 20px;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE — CELULAR
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  #screen-app .metrics {
+    grid-template-columns: 1fr 1fr;
+
+    gap: 9px;
+  }
+
+  #screen-app .metric-card {
+    min-height: 100px;
+  }
+
+  #screen-app .form-card,
+  #screen-app .stock-add-panel {
+    padding: 18px;
+
+    border-radius: 14px;
+  }
+
+  #screen-app .section-hd {
+    align-items: flex-start;
+  }
+
+  #screen-app .section-hd h2 {
+    font-size: 18px;
+  }
+
+  #screen-app .page-title h2 {
+    font-size: 20px;
+  }
+
+  #screen-app .table-wrap {
+    border-radius: 12px;
+  }
+
+  /* Cubitos */
+  #screen-app .cubitos-forms {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* =========================================================
+   CELULARES MUY PEQUEÑOS
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  #screen-app .app-content {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+
+  #screen-app .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  #screen-app .content-header h1 {
+    font-size: 21px;
+  }
+
+  #screen-app .mobile-nav {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+}
+
