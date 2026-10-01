@@ -2573,3 +2573,356 @@ body.producto-modal-open {
   }
 
 }
+
+```css
+/* ==========================================================
+   VENTAAPP — SELECTOR DE PRODUCTOS RESPONSIVE FINAL
+   ========================================================== */
+
+/* GRID PRINCIPAL */
+.producto-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 8px 26px 26px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* TARJETA */
+.producto-picker-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+
+  padding: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  text-align: left;
+  cursor: pointer;
+
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.producto-picker-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0,0,0,.22);
+}
+
+/* IMAGEN */
+.producto-picker-image {
+  position: relative;
+
+  width: 100%;
+  height: 190px;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at center,
+      var(--surface2) 0%,
+      var(--surface) 100%
+    );
+}
+
+.producto-picker-image img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  padding: 8px;
+
+  transition: transform .25s ease;
+}
+
+.producto-picker-card:hover .producto-picker-image img {
+  transform: scale(1.03);
+}
+
+/* SIN FOTO */
+.producto-card-no-image {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--text2);
+  font-size: 34px;
+}
+
+/* STOCK */
+.producto-stock-badge {
+  position: absolute;
+
+  right: 8px;
+  bottom: 8px;
+
+  padding: 5px 9px;
+
+  border-radius: 8px;
+
+  background: rgba(0,0,0,.82);
+
+  color: #fff;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  backdrop-filter: blur(5px);
+}
+
+/* INFORMACIÓN */
+.producto-picker-info {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+
+  padding: 12px;
+}
+
+/* CATEGORÍA */
+.producto-picker-category {
+  display: inline-flex;
+  align-items: center;
+
+  width: fit-content;
+
+  padding: 3px 7px;
+
+  border-radius: 6px;
+
+  background: var(--surface2);
+
+  color: var(--accent);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+/* NOMBRE */
+.producto-picker-name,
+.producto-picker-info strong {
+  display: -webkit-box;
+
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+
+  overflow: hidden;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* DETALLES */
+.producto-picker-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  margin-top: 2px;
+
+  color: var(--text2);
+
+  font-size: 11px;
+}
+
+.producto-picker-meta span {
+  display: flex;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.producto-picker-meta b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (max-width: 800px) {
+
+  .producto-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .producto-picker-image {
+    height: 180px;
+  }
+
+}
+
+/* ==========================================================
+   CELULAR
+   ========================================================== */
+
+@media (max-width: 560px) {
+
+  .producto-modal {
+    padding: 0;
+  }
+
+  .producto-modal-box {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+
+    border: none;
+    border-radius: 0;
+  }
+
+  .producto-modal-header {
+    padding: 16px 16px 13px;
+    gap: 12px;
+  }
+
+  .producto-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .producto-modal-header p:last-child {
+    font-size: 11px;
+  }
+
+  .producto-modal-close {
+    width: 40px;
+    height: 40px;
+    font-size: 23px;
+  }
+
+  .producto-modal-search {
+    margin: 12px 16px 10px;
+  }
+
+  .producto-modal-search input {
+    height: 46px;
+  }
+
+  .producto-modal-filters {
+    padding: 0 16px;
+  }
+
+  .producto-modal-count {
+    padding: 10px 16px 8px;
+  }
+
+  /* DOS PRODUCTOS POR FILA */
+  .producto-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+
+    padding: 8px 12px 20px;
+  }
+
+  .producto-picker-card {
+    border-radius: 12px;
+  }
+
+  /* FOTO MÁS GRANDE */
+  .producto-picker-image {
+    height: 170px;
+  }
+
+  .producto-picker-image img {
+    padding: 6px;
+  }
+
+  /* INFO */
+  .producto-picker-info {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .producto-picker-category {
+    font-size: 8px;
+    padding: 3px 6px;
+  }
+
+  .producto-picker-name,
+  .producto-picker-info strong {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .producto-picker-meta {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .producto-stock-badge {
+    right: 6px;
+    bottom: 6px;
+
+    padding: 4px 7px;
+
+    font-size: 10px;
+  }
+
+}
+
+/* ==========================================================
+   CELULARES MUY PEQUEÑOS
+   ========================================================== */
+
+@media (max-width: 380px) {
+
+  .producto-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .producto-picker-image {
+    height: 145px;
+  }
+
+  .producto-picker-info {
+    padding: 8px;
+  }
+
+  .producto-picker-name,
+  .producto-picker-info strong {
+    font-size: 12px;
+  }
+
+  .producto-picker-meta {
+    font-size: 9px;
+  }
+
+  .producto-stock-badge {
+    font-size: 9px;
+    padding: 3px 6px;
+  }
+
+}
+
