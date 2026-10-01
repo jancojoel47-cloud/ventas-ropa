@@ -244,171 +244,162 @@
 
               <!-- PRODUCTO -->
 
-<div class="field venta-producto-field">
-  <label>Producto</label>
+              <div class="field venta-producto-field">
+                <label>Producto</label>
 
-  <!-- ID REAL DEL PRODUCTO. Lo sigue usando submitVenta() -->
-  <input type="hidden" id="v-prod" value="" />
+                <!-- ID REAL DEL PRODUCTO. Lo sigue usando submitVenta() -->
+                <input type="hidden" id="v-prod" value="" />
 
-  <!-- Selector visual -->
-  <button
-    type="button"
-    id="venta-producto-selector"
-    class="venta-producto-selector"
-    onclick="openProductModal()"
-  >
-    <span class="venta-producto-placeholder-icon">＋</span>
+                <!-- Selector visual -->
+                <button
+                  type="button"
+                  id="venta-producto-selector"
+                  class="venta-producto-selector"
+                  onclick="openProductModal()"
+                >
+                  <span class="venta-producto-placeholder-icon">＋</span>
 
-    <span class="venta-producto-selector-text">
-      <strong>Seleccionar producto</strong>
-      <small>Elegí un producto del stock</small>
-    </span>
+                  <span class="venta-producto-selector-text">
+                    <strong>Seleccionar producto</strong>
+                    <small>Elegí un producto del stock</small>
+                  </span>
 
-    <span class="venta-producto-arrow">⌄</span>
-  </button>
+                  <span class="venta-producto-arrow">⌄</span>
+                </button>
 
-  <!-- Producto seleccionado -->
-  <div
-    id="venta-producto-selected"
-    class="venta-producto-selected"
-    style="display: none"
-  >
-    <div class="venta-producto-selected-image">
-      <img id="venta-producto-selected-img" src="" alt="" />
-    </div>
+                <!-- Producto seleccionado -->
+                <div
+                  id="venta-producto-selected"
+                  class="venta-producto-selected"
+                  style="display: none"
+                >
+                  <div class="venta-producto-selected-image">
+                    <img id="venta-producto-selected-img" src="" alt="" />
+                  </div>
 
-    <div class="venta-producto-selected-info">
-      <strong id="venta-producto-selected-name">
-        Producto
-      </strong>
+                  <div class="venta-producto-selected-info">
+                    <strong id="venta-producto-selected-name">
+                      Producto
+                    </strong>
 
-      <span id="venta-producto-selected-details">
-        Talle · Stock
-      </span>
-    </div>
+                    <span id="venta-producto-selected-details">
+                      Talle · Stock
+                    </span>
+                  </div>
 
-    <button
-      type="button"
-      class="venta-producto-change"
-      onclick="openProductModal()"
-      title="Cambiar producto"
-    >
-      Cambiar
-    </button>
-  </div>
-</div>
+                  <button
+                    type="button"
+                    class="venta-producto-change"
+                    onclick="openProductModal()"
+                    title="Cambiar producto"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- MODAL SELECCIONAR PRODUCTO -->
-<!-- ══════════════════════════════════════════════ -->
+              <!-- ══════════════════════════════════════════════ -->
+              <!-- MODAL SELECCIONAR PRODUCTO -->
+              <!-- ══════════════════════════════════════════════ -->
 
-<div
-  id="producto-modal"
-  class="producto-modal"
-  aria-hidden="true"
->
-  <div
-    class="producto-modal-backdrop"
-    onclick="closeProductModal()"
-  ></div>
+              <div
+                id="producto-modal"
+                class="producto-modal"
+                aria-hidden="true"
+              >
+                <div
+                  class="producto-modal-backdrop"
+                  onclick="closeProductModal()"
+                ></div>
 
-  <div
-    class="producto-modal-box"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="producto-modal-title"
-  >
+                <div
+                  class="producto-modal-box"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="producto-modal-title"
+                >
+                  <!-- CABECERA -->
 
-    <!-- CABECERA -->
+                  <div class="producto-modal-header">
+                    <div>
+                      <p class="eyebrow">STOCK DISPONIBLE</p>
 
-    <div class="producto-modal-header">
-      <div>
-        <p class="eyebrow">STOCK DISPONIBLE</p>
+                      <h2 id="producto-modal-title">Seleccionar producto</h2>
 
-        <h2 id="producto-modal-title">
-          Seleccionar producto
-        </h2>
+                      <p>Elegí el producto que querés vender.</p>
+                    </div>
 
-        <p>
-          Elegí el producto que querés vender.
-        </p>
-      </div>
+                    <button
+                      type="button"
+                      class="producto-modal-close"
+                      onclick="closeProductModal()"
+                      aria-label="Cerrar"
+                    >
+                      ×
+                    </button>
+                  </div>
 
-      <button
-        type="button"
-        class="producto-modal-close"
-        onclick="closeProductModal()"
-        aria-label="Cerrar"
-      >
-        ×
-      </button>
-    </div>
+                  <!-- BUSCADOR -->
 
-    <!-- BUSCADOR -->
+                  <div class="producto-modal-search">
+                    <span class="producto-search-icon">⌕</span>
 
-    <div class="producto-modal-search">
-      <span class="producto-search-icon">⌕</span>
+                    <input
+                      type="text"
+                      id="producto-search"
+                      placeholder="Buscar producto..."
+                      autocomplete="off"
+                    />
+                  </div>
 
-      <input
-        type="text"
-        id="producto-search"
-        placeholder="Buscar producto..."
-        autocomplete="off"
-      />
-    </div>
+                  <!-- FILTROS -->
 
-    <!-- FILTROS -->
+                  <div class="producto-modal-filters">
+                    <button
+                      type="button"
+                      class="producto-filter active"
+                      data-filter="Todos"
+                      onclick="setProductFilter('Todos', this)"
+                    >
+                      Todos
+                    </button>
 
-    <div class="producto-modal-filters">
-      <button
-        type="button"
-        class="producto-filter active"
-        data-filter="Todos"
-        onclick="setProductFilter('Todos', this)"
-      >
-        Todos
-      </button>
+                    <button
+                      type="button"
+                      class="producto-filter"
+                      data-filter="Ropa"
+                      onclick="setProductFilter('Ropa', this)"
+                    >
+                      Ropa
+                    </button>
 
-      <button
-        type="button"
-        class="producto-filter"
-        data-filter="Ropa"
-        onclick="setProductFilter('Ropa', this)"
-      >
-        Ropa
-      </button>
+                    <button
+                      type="button"
+                      class="producto-filter"
+                      data-filter="Accesorios"
+                      onclick="setProductFilter('Accesorios', this)"
+                    >
+                      Accesorios
+                    </button>
+                  </div>
 
-      <button
-        type="button"
-        class="producto-filter"
-        data-filter="Accesorios"
-        onclick="setProductFilter('Accesorios', this)"
-      >
-        Accesorios
-      </button>
-    </div>
+                  <!-- CONTADOR -->
 
-    <!-- CONTADOR -->
+                  <div class="producto-modal-count">
+                    <span id="producto-modal-count">
+                      Cargando productos...
+                    </span>
+                  </div>
 
-    <div class="producto-modal-count">
-      <span id="producto-modal-count">
-        Cargando productos...
-      </span>
-    </div>
+                  <!-- PRODUCTOS -->
 
-    <!-- PRODUCTOS -->
-
-    <div
-      id="producto-picker-grid"
-      class="producto-picker-grid"
-    >
-      <div class="producto-picker-loading">
-        Cargando productos...
-      </div>
-    </div>
-
-  </div>
-</div>
+                  <div id="producto-picker-grid" class="producto-picker-grid">
+                    <div class="producto-picker-loading">
+                      Cargando productos...
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <!-- CANTIDAD -->
 
