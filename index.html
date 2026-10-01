@@ -210,11 +210,19 @@
                 <thead>
                   <tr>
                     <th>Hora</th>
+
                     <th>Producto</th>
-                    <th>*ía</th>
+
+                    <th>Categoría</th>
+
+                    <th>Cantidad</th>
+
                     <th>Moneda</th>
+
                     <th>Monto</th>
+
                     <th>Pago</th>
+
                     <th>Vendedor</th>
                   </tr>
                 </thead>
@@ -231,14 +239,182 @@
             </div>
             <div class="form-card">
               <h2>Datos de la venta</h2>
+
+              <!-- PRODUCTO -->
+
+              <!-- PRODUCTO -->
+
+<div class="field venta-producto-field">
+  <label>Producto</label>
+
+  <!-- ID REAL DEL PRODUCTO. Lo sigue usando submitVenta() -->
+  <input type="hidden" id="v-prod" value="" />
+
+  <!-- Selector visual -->
+  <button
+    type="button"
+    id="venta-producto-selector"
+    class="venta-producto-selector"
+    onclick="openProductModal()"
+  >
+    <span class="venta-producto-placeholder-icon">＋</span>
+
+    <span class="venta-producto-selector-text">
+      <strong>Seleccionar producto</strong>
+      <small>Elegí un producto del stock</small>
+    </span>
+
+    <span class="venta-producto-arrow">⌄</span>
+  </button>
+
+  <!-- Producto seleccionado -->
+  <div
+    id="venta-producto-selected"
+    class="venta-producto-selected"
+    style="display: none"
+  >
+    <div class="venta-producto-selected-image">
+      <img id="venta-producto-selected-img" src="" alt="" />
+    </div>
+
+    <div class="venta-producto-selected-info">
+      <strong id="venta-producto-selected-name">
+        Producto
+      </strong>
+
+      <span id="venta-producto-selected-details">
+        Talle · Stock
+      </span>
+    </div>
+
+    <button
+      type="button"
+      class="venta-producto-change"
+      onclick="openProductModal()"
+      title="Cambiar producto"
+    >
+      Cambiar
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL SELECCIONAR PRODUCTO -->
+<!-- ══════════════════════════════════════════════ -->
+
+<div
+  id="producto-modal"
+  class="producto-modal"
+  aria-hidden="true"
+>
+  <div
+    class="producto-modal-backdrop"
+    onclick="closeProductModal()"
+  ></div>
+
+  <div
+    class="producto-modal-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="producto-modal-title"
+  >
+
+    <!-- CABECERA -->
+
+    <div class="producto-modal-header">
+      <div>
+        <p class="eyebrow">STOCK DISPONIBLE</p>
+
+        <h2 id="producto-modal-title">
+          Seleccionar producto
+        </h2>
+
+        <p>
+          Elegí el producto que querés vender.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="producto-modal-close"
+        onclick="closeProductModal()"
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
+    </div>
+
+    <!-- BUSCADOR -->
+
+    <div class="producto-modal-search">
+      <span class="producto-search-icon">⌕</span>
+
+      <input
+        type="text"
+        id="producto-search"
+        placeholder="Buscar producto..."
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- FILTROS -->
+
+    <div class="producto-modal-filters">
+      <button
+        type="button"
+        class="producto-filter active"
+        data-filter="Todos"
+        onclick="setProductFilter('Todos', this)"
+      >
+        Todos
+      </button>
+
+      <button
+        type="button"
+        class="producto-filter"
+        data-filter="Ropa"
+        onclick="setProductFilter('Ropa', this)"
+      >
+        Ropa
+      </button>
+
+      <button
+        type="button"
+        class="producto-filter"
+        data-filter="Accesorios"
+        onclick="setProductFilter('Accesorios', this)"
+      >
+        Accesorios
+      </button>
+    </div>
+
+    <!-- CONTADOR -->
+
+    <div class="producto-modal-count">
+      <span id="producto-modal-count">
+        Cargando productos...
+      </span>
+    </div>
+
+    <!-- PRODUCTOS -->
+
+    <div
+      id="producto-picker-grid"
+      class="producto-picker-grid"
+    >
+      <div class="producto-picker-loading">
+        Cargando productos...
+      </div>
+    </div>
+
+  </div>
+</div>
+
+              <!-- CANTIDAD -->
+
               <div class="field">
-                <label>Producto</label>
-                <select id="v-prod">
-                  <option value="">Cargando productos...</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Cantidad</label>
+                <label> Cantidad </label>
+
                 <input
                   type="number"
                   id="v-cantidad"
@@ -246,53 +422,83 @@
                   min="1"
                   step="1"
                 />
-                <small id="v-stock-info" style="color: var(--text3)"
-                  >Seleccioná un producto</small
-                >
+
+                <small id="v-stock-info" class="venta-stock-info">
+                  Seleccioná un producto
+                </small>
               </div>
+
+              <!-- MONEDA -->
+
               <div class="form-row">
                 <div class="field">
-                  <label>Categoría</label
-                  ><select id="v-cat">
-                    <option value="Ropa">Ropa</option>
-                    <option value="Accesorios">Accesorios</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Moneda</label
-                  ><select id="v-cur">
+                  <label> Moneda </label>
+
+                  <select id="v-cur">
                     <option value="ARS">ARS $</option>
+
                     <option value="USD">USD $</option>
+
                     <option value="BRL">BRL R$</option>
                   </select>
                 </div>
-              </div>
-              <div class="form-row">
+
+                <!-- MONTO -->
+
                 <div class="field">
-                  <label>Monto</label
-                  ><input type="number" id="v-amt" placeholder="0" min="0" />
-                </div>
-                <div class="field">
-                  <label>Método de pago</label
-                  ><select id="v-met">
-                    <option>Efectivo</option>
-                    <option>Transferencia</option>
-                    <option>Débito</option>
-                    <option>Crédito</option>
-                    <option>MercadoPago</option>
-                  </select>
+                  <label> Monto </label>
+
+                  <input
+                    type="number"
+                    id="v-amt"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
                 </div>
               </div>
+
+              <!-- MÉTODO -->
+
               <div class="field">
-                <label>Nota opcional</label
-                ><input
-                  type="text"
-                  id="v-nota"
-                  placeholder="Ej: con descuento"
-                />
+                <label> Método de pago </label>
+
+                <select id="v-met">
+                  <option>Efectivo</option>
+
+                  <option>Transferencia</option>
+
+                  <option>Tarjeta</option>
+
+                  <option>Mercado Pago</option>
+
+                  <option>Otro</option>
+                </select>
               </div>
-              <p class="err" id="v-err"></p>
-              <button class="btn btn-green" id="v-btn" onclick="submitVenta()">
+
+              <!-- NOTA -->
+
+              <div class="field">
+                <label> Nota </label>
+
+                <textarea
+                  id="v-nota"
+                  placeholder="Opcional..."
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div
+                id="v-err"
+                style="color: var(--red); margin-bottom: 10px"
+              ></div>
+
+              <button
+                type="button"
+                id="v-btn"
+                class="btn btn-accent"
+                onclick="submitVenta()"
+              >
                 Registrar venta
               </button>
             </div>
@@ -306,9 +512,133 @@
               </div>
               <button class="btn-sm" onclick="loadStock()">↻ Actualizar</button>
             </div>
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- FORMULARIO NUEVO PRODUCTO -->
+            <!-- ══════════════════════════════════════════════ -->
+
+            <div class="stock-add-panel">
+              <div class="stock-add-heading">
+                <div>
+                  <span class="stock-add-eyebrow"> NUEVO PRODUCTO </span>
+
+                  <h3>Agregar al stock</h3>
+
+                  <p>Cargá el producto, talla, cantidad e imagen.</p>
+                </div>
+              </div>
+
+              <div class="stock-add-grid">
+                <!-- PRODUCTO -->
+
+                <div class="stock-field">
+                  <label> Nombre del producto </label>
+
+                  <input
+                    type="text"
+                    id="stock-nombre"
+                    placeholder="Ej: Remera Oversize"
+                  />
+                </div>
+
+                <!-- CATEGORÍA -->
+
+                <div class="stock-field">
+                  <label> Categoría </label>
+
+                  <select id="stock-categoria">
+                    <option value="Ropa">Ropa</option>
+
+                    <option value="Accesorios">Accesorios</option>
+                  </select>
+                </div>
+
+                <!-- TALLA -->
+
+                <div class="stock-field">
+                  <label> Talla </label>
+
+                  <input
+                    type="text"
+                    id="stock-talla"
+                    placeholder="S, M, L, XL, 38, 40, Única..."
+                  />
+                </div>
+
+                <!-- CANTIDAD -->
+
+                <div class="stock-field">
+                  <label> Cantidad </label>
+
+                  <input
+                    type="number"
+                    id="stock-cantidad"
+                    min="0"
+                    step="1"
+                    value="0"
+                    placeholder="0"
+                  />
+                </div>
+
+                <!-- IMAGEN -->
+
+                <div class="stock-field stock-image-field">
+                  <label> Imagen del producto </label>
+
+                  <label class="stock-file-button">
+                    <span> 📷 Seleccionar imagen </span>
+
+                    <input
+                      type="file"
+                      id="stock-imagen"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      hidden
+                    />
+                  </label>
+
+                  <span id="stock-file-name" class="stock-file-name">
+                    Ninguna imagen seleccionada
+                  </span>
+                </div>
+              </div>
+
+              <!-- BOTÓN -->
+
+              <div class="stock-add-footer">
+                <div id="stock-add-error"></div>
+
+                <button
+                  type="button"
+                  class="stock-add-button btn btn-accent"
+                  onclick="agregarProductoStock()"
+                >
+                  + Agregar producto
+                </button>
+              </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- BUSCADOR -->
+            <!-- ══════════════════════════════════════════════ -->
+
+            <div class="stock-search-box">
+              <span> 🔎 </span>
+
+              <input
+                type="text"
+                id="stock-search"
+                placeholder="Buscar producto..."
+                oninput="filtrarStock()"
+              />
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- PRODUCTOS -->
+            <!-- ══════════════════════════════════════════════ -->
+
             <div class="stock-cols" id="stock-cols">
               <div class="loader">
                 <div class="spinner"></div>
+
                 Cargando...
               </div>
             </div>
@@ -342,11 +672,19 @@
                 <thead>
                   <tr>
                     <th>Fecha</th>
+
                     <th>Producto</th>
-                    <th>Cat.</th>
+
+                    <th>Categoría</th>
+
+                    <th>Cantidad</th>
+
                     <th>Moneda</th>
+
                     <th>Monto</th>
+
                     <th>Pago</th>
+
                     <th>Vendedor</th>
                   </tr>
                 </thead>
@@ -580,5 +918,7 @@
     <div class="toast" id="toast"></div>
 
     <script src="app.js" defer></script>
+    <script src="stock.js" defer></script>
+    <script src="ventas.js" defer></script>
   </body>
 </html>
