@@ -2,7 +2,13 @@
 // STOCK.JS
 // ══════════════════════════════════════════════
 
+
+// ══════════════════════════════════════════════
+// AGREGAR PRODUCTO AL STOCK
+// ══════════════════════════════════════════════
+
 async function agregarProductoStock() {
+
   const nombreInput =
     document.getElementById(
       "stock-nombre"
@@ -13,14 +19,9 @@ async function agregarProductoStock() {
       "stock-categoria"
     );
 
-  const tallaInput =
+  const tallesList =
     document.getElementById(
-      "stock-talla"
-    );
-
-  const cantidadInput =
-    document.getElementById(
-      "stock-cantidad"
+      "stock-talles-list"
     );
 
   const imagenInput =
@@ -33,18 +34,30 @@ async function agregarProductoStock() {
       "stock-add-error"
     );
 
+
   if (errorBox) {
     errorBox.textContent = "";
   }
 
+
   if (
     !nombreInput ||
     !categoriaInput ||
-    !tallaInput ||
-    !cantidadInput
+    !tallesList
   ) {
+
+    console.error(
+      "No se encontraron los campos del formulario de stock."
+    );
+
+    if (errorBox) {
+      errorBox.textContent =
+        "No se pudo cargar el formulario de stock.";
+    }
+
     return;
   }
+
 
   const nombre =
     nombreInput.value.trim();
@@ -52,16 +65,13 @@ async function agregarProductoStock() {
   const categoria =
     categoriaInput.value;
 
-  const talla =
-    tallaInput.value.trim();
 
-  const cantidad =
-    parseInt(
-      cantidadInput.value,
-      10
-    );
+  // ════════════════════════════════════════════
+  // VALIDAR NOMBRE
+  // ════════════════════════════════════════════
 
   if (!nombre) {
+
     if (errorBox) {
       errorBox.textContent =
         "Ingresá el nombre del producto.";
@@ -70,36 +80,181 @@ async function agregarProductoStock() {
     return;
   }
 
-  if (
-    !Number.isInteger(cantidad) ||
-    cantidad < 0
-  ) {
+
+  // ════════════════════════════════════════════
+  // LEER TODOS LOS TALLES
+  // ════════════════════════════════════════════
+
+  const filas =
+    Array.from(
+      tallesList.querySelectorAll(
+        ".stock-talle-row"
+      )
+    );
+
+
+  const talles = [];
+
+
+  for (const fila of filas) {
+
+    const talleInput =
+      fila.querySelector(
+        ".stock-talle-input"
+      );
+
+    const cantidadInput =
+      fila.querySelector(
+        ".stock-talle-cantidad"
+      );
+
+
+    if (
+      !talleInput ||
+      !cantidadInput
+    ) {
+      continue;
+    }
+
+
+    const talle =
+      talleInput.value.trim();
+
+    const cantidad =
+      parseInt(
+        cantidadInput.value,
+        10
+      );
+
+
+    // Fila completamente vacía.
+    if (
+      !talle &&
+      (
+        cantidadInput.value === "" ||
+        cantidad === 0
+      )
+    ) {
+      continue;
+    }
+
+
+    // Falta el talle.
+    if (!talle) {
+
+      if (errorBox) {
+        errorBox.textContent =
+          "Completá el nombre de todos los talles.";
+      }
+
+      return;
+    }
+
+
+    // Cantidad inválida.
+    if (
+      !Number.isInteger(cantidad) ||
+      cantidad < 0
+    ) {
+
+      if (errorBox) {
+        errorBox.textContent =
+          "Ingresá una cantidad válida para el talle " +
+          talle +
+          ".";
+      }
+
+      return;
+    }
+
+
+    talles.push({
+      talle,
+      cantidad
+    });
+  }
+
+
+  // ════════════════════════════════════════════
+  // DEBE EXISTIR AL MENOS UN TALLE
+  // ════════════════════════════════════════════
+
+  if (!talles.length) {
+
     if (errorBox) {
       errorBox.textContent =
-        "Ingresá una cantidad válida.";
+        "Agregá al menos un talle con su cantidad.";
     }
 
     return;
   }
 
-  // --------------------------------------------
-  // IMAGEN
-  // --------------------------------------------
+
+  // ════════════════════════════════════════════
+  // EVITAR TALLES REPETIDOS
+  // ════════════════════════════════════════════
+
+  const tallesNormalizados =
+    talles.map(
+      item =>
+        item.talle
+          .toLowerCase()
+          .trim()
+    );
+
+
+  const tallesDuplicados =
+    tallesNormalizados.filter(
+      (talle, index) =>
+        tallesNormalizados.indexOf(talle) !== index
+    );
+
+
+  if (tallesDuplicados.length) {
+
+    if (errorBox) {
+      errorBox.textContent =
+        "No podés repetir el mismo talle.";
+    }
+
+    return;
+  }
+
+
+  // ════════════════════════════════════════════
+  // CALCULAR STOCK TOTAL
+  // ════════════════════════════════════════════
+
+  const cantidadTotal =
+    talles.reduce(
+      (total, item) =>
+        total + item.cantidad,
+      0
+    );
+
+
+  // ════════════════════════════════════════════
+  // SUBIR IMAGEN
+  // ════════════════════════════════════════════
 
   let imagenUrl = null;
+
 
   if (
     imagenInput &&
     imagenInput.files &&
     imagenInput.files.length
   ) {
+
     const file =
       imagenInput.files[0];
+
 
     if (
       file.size >
       5 * 1024 * 1024
     ) {
+
       if (errorBox) {
         errorBox.textContent =
           "La imagen no puede superar los 5 MB.";
@@ -108,35 +263,48 @@ async function agregarProductoStock() {
       return;
     }
 
+
     const extension =
       file.name
         .split(".")
         .pop()
         .toLowerCase();
 
+
     const fileName =
-      `${Date.now()}-${Math.random()
+      Date.now() +
+      "-" +
+      Math.random()
         .toString(36)
-        .substring(2)}.${extension}`;
+        .substring(2) +
+      "." +
+      extension;
+
 
     const filePath =
-      `productos/${fileName}`;
+      "productos/" +
+      fileName;
+
 
     const {
-      error: uploadError,
-    } = await sb.storage
-      .from("productos")
-      .upload(
-        filePath,
-        file,
-        {
-          cacheControl: "3600",
-          upsert: false,
-        }
-      );
+      error: uploadError
+    } =
+      await sb.storage
+        .from("productos")
+        .upload(
+          filePath,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false
+          }
+        );
+
 
     if (uploadError) {
+
       console.error(
+        "Error subiendo imagen:",
         uploadError
       );
 
@@ -148,36 +316,51 @@ async function agregarProductoStock() {
       return;
     }
 
+
     const {
-      data: publicUrlData,
-    } = sb.storage
-      .from("productos")
-      .getPublicUrl(filePath);
+      data: publicUrlData
+    } =
+      sb.storage
+        .from("productos")
+        .getPublicUrl(
+          filePath
+        );
+
 
     imagenUrl =
-      publicUrlData.publicUrl;
+      publicUrlData?.publicUrl ||
+      null;
   }
 
-  // --------------------------------------------
-  // INSERTAR PRODUCTO
-  // --------------------------------------------
+
+  // ════════════════════════════════════════════
+  // CREAR PRODUCTO EN STOCK
+  // ════════════════════════════════════════════
 
   const {
-    error,
-  } = await sb
-    .from("stock")
-    .insert([
-      {
-        nombre,
-        categoria,
-        talla: talla || null,
-        cantidad,
-        imagen_url: imagenUrl,
-      },
-    ]);
+    data: producto,
+    error: productoError
+  } =
+    await sb
+      .from("stock")
+      .insert([
+        {
+          nombre,
+          categoria,
+          cantidad: cantidadTotal,
+          imagen_url: imagenUrl
+        }
+      ])
+      .select()
+      .single();
 
-  if (error) {
-    console.error(error);
+
+  if (productoError) {
+
+    console.error(
+      "Error creando producto:",
+      productoError
+    );
 
     if (errorBox) {
       errorBox.textContent =
@@ -187,36 +370,263 @@ async function agregarProductoStock() {
     return;
   }
 
-  // --------------------------------------------
+
+  // ════════════════════════════════════════════
+  // CREAR TALLES DEL PRODUCTO
+  // ════════════════════════════════════════════
+
+  const tallesParaInsertar =
+    talles.map(
+      item => ({
+        producto_id: producto.id,
+        talle: item.talle,
+        cantidad: item.cantidad
+      })
+    );
+
+
+  const {
+    error: tallesError
+  } =
+    await sb
+      .from("producto_talles")
+      .insert(
+        tallesParaInsertar
+      );
+
+
+  // ════════════════════════════════════════════
+  // SI FALLAN LOS TALLES,
+  // ELIMINAR EL PRODUCTO CREADO
+  // ════════════════════════════════════════════
+
+  if (tallesError) {
+
+    console.error(
+      "Error creando talles:",
+      tallesError
+    );
+
+
+    await sb
+      .from("stock")
+      .delete()
+      .eq(
+        "id",
+        producto.id
+      );
+
+
+    if (errorBox) {
+      errorBox.textContent =
+        "No se pudieron guardar los talles del producto.";
+    }
+
+    return;
+  }
+
+
+  // ════════════════════════════════════════════
   // LIMPIAR FORMULARIO
-  // --------------------------------------------
+  // ════════════════════════════════════════════
 
   nombreInput.value = "";
-  tallaInput.value = "";
-  cantidadInput.value = "0";
+
+
+  // Dejamos una fila inicial.
+  tallesList.innerHTML = `
+    <div class="stock-talle-row">
+
+      <input
+        type="text"
+        class="stock-talle-input"
+        placeholder="Talle (ej: 38, M, XL)"
+      />
+
+      <input
+        type="number"
+        class="stock-talle-cantidad"
+        min="0"
+        step="1"
+        value="0"
+        placeholder="Cantidad"
+      />
+
+      <button
+        type="button"
+        class="stock-talle-remove"
+        onclick="eliminarFilaTalle(this)"
+        title="Eliminar talle"
+      >
+        ×
+      </button>
+
+    </div>
+  `;
+
 
   if (imagenInput) {
     imagenInput.value = "";
   }
+
 
   const fileName =
     document.getElementById(
       "stock-file-name"
     );
 
+
   if (fileName) {
     fileName.textContent =
       "Ninguna imagen seleccionada";
   }
+
+
+  if (errorBox) {
+    errorBox.textContent = "";
+  }
+
 
   showToast(
     "✓ Producto agregado al stock",
     "ok"
   );
 
+
+  // Actualizar stock.
   await loadStock();
 
+
+  // Actualizar productos de venta.
   await loadProductOptions();
+}
+
+
+// ══════════════════════════════════════════════
+// AGREGAR FILA DE TALLE
+// ══════════════════════════════════════════════
+
+function agregarFilaTalle() {
+
+  const list =
+    document.getElementById(
+      "stock-talles-list"
+    );
+
+
+  if (!list) {
+    return;
+  }
+
+
+  const row =
+    document.createElement(
+      "div"
+    );
+
+
+  row.className =
+    "stock-talle-row";
+
+
+  row.innerHTML = `
+    <input
+      type="text"
+      class="stock-talle-input"
+      placeholder="Talle (ej: 38, M, XL)"
+    />
+
+    <input
+      type="number"
+      class="stock-talle-cantidad"
+      min="0"
+      step="1"
+      value="0"
+      placeholder="Cantidad"
+    />
+
+    <button
+      type="button"
+      class="stock-talle-remove"
+      onclick="eliminarFilaTalle(this)"
+      title="Eliminar talle"
+    >
+      ×
+    </button>
+  `;
+
+
+  list.appendChild(row);
+}
+
+
+// ══════════════════════════════════════════════
+// ELIMINAR FILA DE TALLE
+// ══════════════════════════════════════════════
+
+function eliminarFilaTalle(button) {
+
+  const list =
+    document.getElementById(
+      "stock-talles-list"
+    );
+
+
+  if (
+    !list ||
+    !button
+  ) {
+    return;
+  }
+
+
+  const row =
+    button.closest(
+      ".stock-talle-row"
+    );
+
+
+  if (!row) {
+    return;
+  }
+
+
+  const rows =
+    list.querySelectorAll(
+      ".stock-talle-row"
+    );
+
+
+  // Siempre dejamos al menos una fila.
+  if (rows.length <= 1) {
+
+    const talleInput =
+      row.querySelector(
+        ".stock-talle-input"
+      );
+
+
+    const cantidadInput =
+      row.querySelector(
+        ".stock-talle-cantidad"
+      );
+
+
+    if (talleInput) {
+      talleInput.value = "";
+    }
+
+
+    if (cantidadInput) {
+      cantidadInput.value = "0";
+    }
+
+
+    return;
+  }
+
+
+  row.remove();
 }
 
 
@@ -225,12 +635,22 @@ async function agregarProductoStock() {
 // ══════════════════════════════════════════════
 
 async function loadStock() {
+
   const wrapper =
     document.getElementById(
       "stock-cols"
     );
 
-  if (!wrapper) return;
+
+  if (!wrapper) {
+
+    console.warn(
+      "No existe #stock-cols"
+    );
+
+    return;
+  }
+
 
   wrapper.innerHTML = `
     <div class="loader">
@@ -239,82 +659,193 @@ async function loadStock() {
     </div>
   `;
 
+
   const {
     data,
-    error,
-  } = await sb
-    .from("stock")
-    .select("*")
-    .order("categoria")
-    .order("nombre");
+    error
+  } =
+    await sb
+      .from("stock")
+      .select("*")
+      .order("categoria")
+      .order("nombre");
+
 
   if (error) {
-    console.error(error);
+
+    console.error(
+      "Error cargando stock:",
+      error
+    );
+
 
     wrapper.innerHTML = `
-      <p style="color:var(--red);padding:16px">
+      <p
+        style="
+          color:var(--red);
+          padding:16px
+        "
+      >
         Error al cargar stock.
       </p>
     `;
 
+
     return;
   }
+
 
   const products =
     data || [];
 
+
+  // ════════════════════════════════════════════
+  // CARGAR TALLES DE TODOS LOS PRODUCTOS
+  // ════════════════════════════════════════════
+
+  const productIds =
+    products.map(
+      product =>
+        product.id
+    );
+
+
+  let tallesPorProducto = {};
+
+
+  if (productIds.length) {
+
+    const {
+      data: tallesData,
+      error: tallesError
+    } =
+      await sb
+        .from("producto_talles")
+        .select(
+          "id, producto_id, talle, cantidad"
+        )
+        .in(
+          "producto_id",
+          productIds
+        )
+        .order("id");
+
+
+    if (tallesError) {
+
+      console.error(
+        "Error cargando talles:",
+        tallesError
+      );
+
+    } else {
+
+      (tallesData || [])
+        .forEach(
+          talle => {
+
+            if (
+              !tallesPorProducto[
+                talle.producto_id
+              ]
+            ) {
+
+              tallesPorProducto[
+                talle.producto_id
+              ] = [];
+            }
+
+
+            tallesPorProducto[
+              talle.producto_id
+            ].push(
+              talle
+            );
+          }
+        );
+    }
+  }
+
+
+  const productsWithTalles =
+    products.map(
+      product => ({
+        ...product,
+
+        talles:
+          tallesPorProducto[
+            product.id
+          ] || []
+      })
+    );
+
+
+  // ════════════════════════════════════════════
+  // CATEGORÍAS
+  // ════════════════════════════════════════════
+
   const categories = [
     "Ropa",
-    "Accesorios",
+    "Accesorios"
   ];
+
 
   wrapper.innerHTML =
     categories
-      .map((category) => {
-        const items =
-          products.filter(
-            (p) =>
-              p.categoria ===
-              category
-          );
+      .map(
+        category => {
 
-        return `
-          <div
-            class="stock-section"
-            data-category="${category}"
-          >
+          const items =
+            productsWithTalles.filter(
+              product =>
+                product.categoria ===
+                category
+            );
 
-            <p class="stock-category-title">
-              ${category}
-            </p>
 
+          return `
             <div
-              class="stock-grid-cards"
-              id="grid-${category}"
+              class="stock-section"
+              data-category="${escapeHTML(category)}"
             >
-              ${
-                items.length
-                  ? items
-                      .map(
-                        (p) =>
-                          stockCardHTML(p)
-                      )
-                      .join("")
-                  : `
-                    <p class="empty">
-                      Sin productos.
-                    </p>
-                  `
-              }
-            </div>
 
-          </div>
-        `;
-      })
+              <p class="stock-category-title">
+                ${escapeHTML(category)}
+              </p>
+
+              <div
+                class="stock-grid-cards"
+                id="grid-${escapeHTML(category)}"
+              >
+
+                ${
+                  items.length
+                    ? items
+                        .map(
+                          product =>
+                            stockCardHTML(
+                              product
+                            )
+                        )
+                        .join("")
+                    : `
+                      <p class="empty">
+                        Sin productos.
+                      </p>
+                    `
+                }
+
+              </div>
+
+            </div>
+          `;
+        }
+      )
       .join("");
 
+
   window._stockData =
-    products;
+    productsWithTalles;
 }
 
 
@@ -323,17 +854,67 @@ async function loadStock() {
 // ══════════════════════════════════════════════
 
 function stockCardHTML(product) {
-  const talla =
-    product.talla ||
-    "Sin talle";
 
   const cantidad =
     Number(
       product.cantidad || 0
     );
 
+
   const imagen =
     product.imagen_url;
+
+
+  const talles =
+    Array.isArray(
+      product.talles
+    )
+      ? product.talles
+      : [];
+
+
+  const tallesHTML =
+    talles.length
+      ? `
+        <div class="stock-card-talles">
+
+          ${talles
+            .map(
+              item => `
+                <span class="stock-card-talle">
+
+                  <strong>
+                    ${escapeHTML(
+                      item.talle
+                    )}
+                  </strong>
+
+                  <span>
+                    ${Number(
+                      item.cantidad || 0
+                    )}
+                    u.
+                  </span>
+
+                </span>
+              `
+            )
+            .join("")}
+
+        </div>
+      `
+      : `
+        <div
+          style="
+            margin-top:8px;
+            color:var(--text2);
+            font-size:12px;
+          "
+        >
+          Sin talles configurados
+        </div>
+      `;
+
 
   return `
     <div
@@ -360,7 +941,8 @@ function stockCardHTML(product) {
               style="
                 width:100%;
                 height:180px;
-                object-fit:cover;
+                object-fit:contain;
+                background:var(--surface2);
                 border-radius:12px;
                 margin-bottom:12px;
               "
@@ -369,11 +951,13 @@ function stockCardHTML(product) {
           : ""
       }
 
+
       <div class="stock-card-name">
         ${escapeHTML(
           product.nombre
         )}
       </div>
+
 
       <div
         style="
@@ -382,10 +966,9 @@ function stockCardHTML(product) {
           font-size:13px;
         "
       >
-        Talle: ${escapeHTML(
-          talla
-        )}
+        Stock total
       </div>
+
 
       <div
         class="stock-card-qty ${
@@ -397,6 +980,7 @@ function stockCardHTML(product) {
         ${cantidad}
       </div>
 
+
       <div
         style="
           font-size:12px;
@@ -406,6 +990,10 @@ function stockCardHTML(product) {
       >
         unidades disponibles
       </div>
+
+
+      ${tallesHTML}
+
 
       <div
         class="stock-card-controls"
@@ -436,89 +1024,302 @@ function stockCardHTML(product) {
 
 
 // ══════════════════════════════════════════════
-// CAMBIAR CANTIDAD MANUALMENTE
+// CAMBIAR STOCK MANUALMENTE
 // ══════════════════════════════════════════════
 
 async function editarCantidadStock(id) {
-  const {
-    data,
-    error,
-  } = await sb
-    .from("stock")
-    .select("cantidad")
-    .eq("id", id)
-    .single();
 
-  if (error || !data) {
+  const {
+    data: producto,
+    error
+  } =
+    await sb
+      .from("stock")
+      .select(
+        "id, nombre"
+      )
+      .eq(
+        "id",
+        id
+      )
+      .single();
+
+
+  if (
+    error ||
+    !producto
+  ) {
+
     showToast(
-      "No se pudo consultar el stock",
+      "No se pudo consultar el producto",
       "fail"
     );
 
     return;
   }
 
-  const actual =
-    Number(
-      data.cantidad || 0
-    );
 
-  const nueva =
-    prompt(
-      "Ingresá la nueva cantidad:",
-      actual
-    );
-
-  if (
-    nueva === null
-  ) {
-    return;
-  }
-
-  const cantidad =
-    parseInt(
-      nueva,
-      10
-    );
-
-  if (
-    !Number.isInteger(
-      cantidad
-    ) ||
-    cantidad < 0
-  ) {
-    showToast(
-      "Ingresá una cantidad válida",
-      "fail"
-    );
-
-    return;
-  }
+  // ════════════════════════════════════════════
+  // CARGAR TALLES
+  // ════════════════════════════════════════════
 
   const {
-    error: updateError,
-  } = await sb
-    .from("stock")
-    .update({
-      cantidad,
-    })
-    .eq("id", id);
+    data: talles,
+    error: tallesError
+  } =
+    await sb
+      .from("producto_talles")
+      .select(
+        "id, talle, cantidad"
+      )
+      .eq(
+        "producto_id",
+        id
+      )
+      .order("id");
 
-  if (updateError) {
+
+  if (tallesError) {
+
     console.error(
-      updateError
+      tallesError
     );
 
     showToast(
-      "No se pudo actualizar el stock",
+      "No se pudieron consultar los talles",
       "fail"
     );
 
     return;
   }
+
+
+  // ════════════════════════════════════════════
+  // PRODUCTO CON TALLES
+  // ════════════════════════════════════════════
+
+  if (
+    talles &&
+    talles.length
+  ) {
+
+    for (
+      const item of talles
+    ) {
+
+      const nueva =
+        prompt(
+          "Nueva cantidad para talle " +
+          item.talle +
+          ":",
+          item.cantidad
+        );
+
+
+      if (
+        nueva === null
+      ) {
+        return;
+      }
+
+
+      const cantidad =
+        parseInt(
+          nueva,
+          10
+        );
+
+
+      if (
+        !Number.isInteger(
+          cantidad
+        ) ||
+        cantidad < 0
+      ) {
+
+        showToast(
+          "Cantidad inválida para " +
+          item.talle,
+          "fail"
+        );
+
+        return;
+      }
+
+
+      const {
+        error: updateError
+      } =
+        await sb
+          .from("producto_talles")
+          .update({
+            cantidad
+          })
+          .eq(
+            "id",
+            item.id
+          );
+
+
+      if (updateError) {
+
+        console.error(
+          updateError
+        );
+
+        showToast(
+          "No se pudo actualizar el talle",
+          "fail"
+        );
+
+        return;
+      }
+    }
+
+
+    // ══════════════════════════════════════════
+    // RECALCULAR STOCK TOTAL
+    // ══════════════════════════════════════════
+
+    const {
+      data: tallesActualizados
+    } =
+      await sb
+        .from("producto_talles")
+        .select(
+          "cantidad"
+        )
+        .eq(
+          "producto_id",
+          id
+        );
+
+
+    const total =
+      (
+        tallesActualizados || []
+      )
+        .reduce(
+          (
+            sum,
+            item
+          ) =>
+            sum +
+            Number(
+              item.cantidad || 0
+            ),
+          0
+        );
+
+
+    await sb
+      .from("stock")
+      .update({
+        cantidad: total
+      })
+      .eq(
+        "id",
+        id
+      );
+
+  } else {
+
+    // ══════════════════════════════════════════
+    // PRODUCTO ANTIGUO / SIN TALLES
+    // ══════════════════════════════════════════
+
+    const {
+      data
+    } =
+      await sb
+        .from("stock")
+        .select(
+          "cantidad"
+        )
+        .eq(
+          "id",
+          id
+        )
+        .single();
+
+
+    const actual =
+      Number(
+        data?.cantidad || 0
+      );
+
+
+    const nueva =
+      prompt(
+        "Ingresá la nueva cantidad:",
+        actual
+      );
+
+
+    if (
+      nueva === null
+    ) {
+      return;
+    }
+
+
+    const cantidad =
+      parseInt(
+        nueva,
+        10
+      );
+
+
+    if (
+      !Number.isInteger(
+        cantidad
+      ) ||
+      cantidad < 0
+    ) {
+
+      showToast(
+        "Ingresá una cantidad válida",
+        "fail"
+      );
+
+      return;
+    }
+
+
+    const {
+      error: updateError
+    } =
+      await sb
+        .from("stock")
+        .update({
+          cantidad
+        })
+        .eq(
+          "id",
+          id
+        );
+
+
+    if (updateError) {
+
+      console.error(
+        updateError
+      );
+
+      showToast(
+        "No se pudo actualizar el stock",
+        "fail"
+      );
+
+      return;
+    }
+  }
+
 
   await loadStock();
+
   await loadProductOptions();
+
 
   showToast(
     "✓ Stock actualizado",
@@ -528,60 +1329,106 @@ async function editarCantidadStock(id) {
 
 
 // ══════════════════════════════════════════════
-// BUSCAR
+// BUSCAR STOCK
 // ══════════════════════════════════════════════
 
 function filtrarStock() {
+
   const input =
     document.getElementById(
       "stock-search"
     );
+
 
   const query =
     input?.value
       .toLowerCase()
       .trim() || "";
 
+
   const products =
     window._stockData || [];
 
+
   const categories = [
     "Ropa",
-    "Accesorios",
+    "Accesorios"
   ];
 
+
   categories.forEach(
-    (category) => {
+    category => {
+
       const grid =
         document.getElementById(
-          "grid-" + category
+          "grid-" +
+          category
         );
 
-      if (!grid) return;
+
+      if (!grid) {
+        return;
+      }
+
 
       const filtered =
         products.filter(
-          (p) =>
-            p.categoria ===
-              category &&
-            (
-              p.nombre
-                .toLowerCase()
-                .includes(query) ||
+          product => {
+
+            if (
+              product.categoria !==
+              category
+            ) {
+              return false;
+            }
+
+
+            const nombre =
               String(
-                p.talla || ""
+                product.nombre || ""
               )
-                .toLowerCase()
-                .includes(query)
-            )
+                .toLowerCase();
+
+
+            if (
+              nombre.includes(
+                query
+              )
+            ) {
+              return true;
+            }
+
+
+            const talles =
+              Array.isArray(
+                product.talles
+              )
+                ? product.talles
+                : [];
+
+
+            return talles.some(
+              item =>
+                String(
+                  item.talle || ""
+                )
+                  .toLowerCase()
+                  .includes(
+                    query
+                  )
+            );
+          }
         );
+
 
       grid.innerHTML =
         filtered.length
           ? filtered
               .map(
-                (p) =>
-                  stockCardHTML(p)
+                product =>
+                  stockCardHTML(
+                    product
+                  )
               )
               .join("")
           : `
@@ -595,10 +1442,11 @@ function filtrarStock() {
 
 
 // ══════════════════════════════════════════════
-// ELIMINAR
+// ELIMINAR PRODUCTO
 // ══════════════════════════════════════════════
 
 async function deleteStock(id) {
+
   if (
     !confirm(
       "¿Eliminar este producto del stock?"
@@ -607,15 +1455,54 @@ async function deleteStock(id) {
     return;
   }
 
+
+  // Primero eliminamos los talles.
   const {
-    error,
-  } = await sb
-    .from("stock")
-    .delete()
-    .eq("id", id);
+    error: tallesError
+  } =
+    await sb
+      .from("producto_talles")
+      .delete()
+      .eq(
+        "producto_id",
+        id
+      );
+
+
+  if (tallesError) {
+
+    console.error(
+      "Error eliminando talles:",
+      tallesError
+    );
+
+    showToast(
+      "No se pudieron eliminar los talles",
+      "fail"
+    );
+
+    return;
+  }
+
+
+  // Después eliminamos el producto.
+  const {
+    error
+  } =
+    await sb
+      .from("stock")
+      .delete()
+      .eq(
+        "id",
+        id
+      );
+
 
   if (error) {
-    console.error(error);
+
+    console.error(
+      error
+    );
 
     showToast(
       "No se pudo eliminar el producto",
@@ -625,8 +1512,11 @@ async function deleteStock(id) {
     return;
   }
 
+
   await loadStock();
+
   await loadProductOptions();
+
 
   showToast(
     "Producto eliminado",
@@ -642,23 +1532,28 @@ async function deleteStock(id) {
 document.addEventListener(
   "DOMContentLoaded",
   () => {
+
     const input =
       document.getElementById(
         "stock-imagen"
       );
+
 
     const fileName =
       document.getElementById(
         "stock-file-name"
       );
 
+
     if (
       input &&
       fileName
     ) {
+
       input.addEventListener(
         "change",
         () => {
+
           fileName.textContent =
             input.files &&
             input.files.length
@@ -669,3 +1564,62 @@ document.addEventListener(
     }
   }
 );
+
+
+// ══════════════════════════════════════════════
+// BUSCADOR DE STOCK
+// ══════════════════════════════════════════════
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    const stockSearch =
+      document.getElementById(
+        "stock-search"
+      );
+
+
+    if (stockSearch) {
+
+      stockSearch.addEventListener(
+        "input",
+        () => {
+          filtrarStock();
+        }
+      );
+    }
+  }
+);
+
+
+// ══════════════════════════════════════════════
+// HACER FUNCIONES DISPONIBLES PARA HTML
+// ══════════════════════════════════════════════
+
+window.agregarProductoStock =
+  agregarProductoStock;
+
+
+window.agregarFilaTalle =
+  agregarFilaTalle;
+
+
+window.eliminarFilaTalle =
+  eliminarFilaTalle;
+
+
+window.loadStock =
+  loadStock;
+
+
+window.editarCantidadStock =
+  editarCantidadStock;
+
+
+window.filtrarStock =
+  filtrarStock;
+
+
+window.deleteStock =
+  deleteStock;

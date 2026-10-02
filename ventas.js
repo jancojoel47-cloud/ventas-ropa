@@ -2,36 +2,23 @@
 // VENTAS.JS
 // ══════════════════════════════════════════════
 
-// ------------------------------------------------
 // PRODUCTOS PARA REGISTRAR VENTA
-// ------------------------------------------------
-
-// ══════════════════════════════════════════════
-//  SELECTOR VISUAL DE PRODUCTOS
-// ══════════════════════════════════════════════
 
 let ventaProductos = [];
 let ventaProductoFiltro = "Todos";
 
-// ──────────────────────────────────────────────
-// ABRIR MODAL
-// ──────────────────────────────────────────────
-
 function openProductModal() {
   const modal = document.getElementById("producto-modal");
-
   if (!modal) return;
 
   modal.classList.add("active");
   modal.setAttribute("aria-hidden", "false");
-
   document.body.classList.add("producto-modal-open");
 
   const search = document.getElementById("producto-search");
 
   if (search) {
     search.value = "";
-
     setTimeout(() => {
       search.focus();
     }, 100);
@@ -40,31 +27,21 @@ function openProductModal() {
   renderProductPicker();
 }
 
-// ──────────────────────────────────────────────
-// CERRAR MODAL
-// ──────────────────────────────────────────────
-
 function closeProductModal() {
   const modal = document.getElementById("producto-modal");
-
   if (!modal) return;
 
   modal.classList.remove("active");
   modal.setAttribute("aria-hidden", "true");
-
   document.body.classList.remove("producto-modal-open");
 }
-
-// ──────────────────────────────────────────────
-// FILTRO
-// ──────────────────────────────────────────────
 
 function setProductFilter(filter, button) {
   ventaProductoFiltro = filter;
 
-  document.querySelectorAll(".producto-filter").forEach((btn) => {
-    btn.classList.remove("active");
-  });
+  document
+    .querySelectorAll(".producto-filter")
+    .forEach((btn) => btn.classList.remove("active"));
 
   if (button) {
     button.classList.add("active");
@@ -72,10 +49,6 @@ function setProductFilter(filter, button) {
 
   renderProductPicker();
 }
-
-// ──────────────────────────────────────────────
-// ESCAPAR HTML
-// ──────────────────────────────────────────────
 
 function escapeProductHTML(value) {
   return String(value ?? "")
@@ -86,18 +59,181 @@ function escapeProductHTML(value) {
     .replace(/'/g, "&#039;");
 }
 
-// ──────────────────────────────────────────────
-// CARGAR PRODUCTOS
-// ──────────────────────────────────────────────
 
-// ──────────────────────────────────────────────
-// RENDER DE PRODUCTOS
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════════
+// STOCK TOTAL DEL PRODUCTO
+// ══════════════════════════════════════════════
+
+function obtenerStockTotalProducto(product) {
+  if (!product) return 0;
+
+  if (
+    Array.isArray(product.talles) &&
+    product.talles.length > 0
+  ) {
+    return product.talles.reduce(
+      (total, talle) =>
+        total + (Number(talle.cantidad) || 0),
+      0
+    );
+  }
+
+  return Number(product.cantidad) || 0;
+}
+
+
+// ══════════════════════════════════════════════
+// PRODUCTOS DISPONIBLES
+// ══════════════════════════════════════════════
+
+function obtenerTallesDisponibles(producto) {
+  if (!producto || !Array.isArray(producto.talles)) {
+    return [];
+  }
+
+  return producto.talles.filter(
+    (t) => Number(t.cantidad) > 0
+  );
+}
+
+
+// ══════════════════════════════════════════════
+// SELECTOR DE TALLE
+// ══════════════════════════════════════════════
+
+function asegurarSelectorTalle() {
+  let talleField =
+    document.getElementById("venta-talle-field");
+
+  let talleSelect =
+    document.getElementById("v-talle");
+
+  if (talleField && talleSelect) {
+    return {
+      field: talleField,
+      select: talleSelect
+    };
+  }
+
+  const cantidadInput =
+    document.getElementById("v-cantidad");
+
+  const cantidadField = cantidadInput
+    ? (
+        cantidadInput.closest(".form-group") ||
+        cantidadInput.parentElement
+      )
+    : null;
+
+  if (!talleField) {
+    talleField = document.createElement("div");
+
+    talleField.id = "venta-talle-field";
+    talleField.className = "form-group";
+
+    talleField.innerHTML = `
+      <label
+        for="v-talle"
+        style="
+          display:block;
+          margin-bottom:7px;
+          font-weight:600;
+        "
+      >
+        Talle
+      </label>
+
+      <select
+        id="v-talle"
+        name="talle"
+        style="width:100%;"
+      >
+        <option value="">
+          Seleccionar talle
+        </option>
+      </select>
+
+      <div
+        id="v-talle-info"
+        style="
+          margin-top:6px;
+          font-size:12px;
+          color:var(--text2);
+        "
+      ></div>
+    `;
+  }
+
+  talleSelect =
+    talleField.querySelector("#v-talle");
+
+  if (!talleSelect) {
+    talleSelect = document.createElement("select");
+
+    talleSelect.id = "v-talle";
+    talleSelect.name = "talle";
+    talleSelect.style.width = "100%";
+
+    talleSelect.innerHTML = `
+      <option value="">
+        Seleccionar talle
+      </option>
+    `;
+
+    talleField.appendChild(talleSelect);
+  }
+
+  if (!document.getElementById("v-talle-info")) {
+    const info = document.createElement("div");
+
+    info.id = "v-talle-info";
+
+    info.style.marginTop = "6px";
+    info.style.fontSize = "12px";
+    info.style.color = "var(--text2)";
+
+    talleField.appendChild(info);
+  }
+
+  if (
+    !talleField.parentNode &&
+    cantidadField &&
+    cantidadField.parentNode
+  ) {
+    cantidadField.parentNode.insertBefore(
+      talleField,
+      cantidadField
+    );
+  }
+
+  talleSelect.onchange = actualizarStockPorTalle;
+
+  return {
+    field: talleField,
+    select: talleSelect
+  };
+}
+
+
+// ══════════════════════════════════════════════
+// PRODUCT PICKER
+// ══════════════════════════════════════════════
 
 function renderProductPicker() {
-  const grid = document.getElementById("producto-picker-grid");
-  const count = document.getElementById("producto-modal-count");
-  const searchInput = document.getElementById("producto-search");
+  const grid =
+    document.getElementById(
+      "producto-picker-grid"
+    );
+
+  const count =
+    document.getElementById(
+      "producto-modal-count"
+    );
+
+  const searchInput =
+    document.getElementById(
+      "producto-search"
+    );
 
   if (!grid) return;
 
@@ -105,49 +241,62 @@ function renderProductPicker() {
     ? searchInput.value.trim().toLowerCase()
     : "";
 
-  let products = ventaProductos.filter((product) => {
+  let products = ventaProductos.filter(
+    (product) => {
 
-    // Solo mostrar productos que tengan stock
-    if (Number(product.cantidad) <= 0) {
-      return false;
-    }
+      const stockTotal =
+        obtenerStockTotalProducto(product);
 
-    // Filtro por categoría
-    if (
-      ventaProductoFiltro !== "Todos" &&
-      product.categoria !== ventaProductoFiltro
-    ) {
-      return false;
-    }
-
-    // Buscador
-    if (search) {
-      const searchableText = [
-        product.nombre,
-        product.categoria,
-        product.talla
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      if (!searchableText.includes(search)) {
+      if (stockTotal <= 0) {
         return false;
       }
+
+      if (
+        ventaProductoFiltro !== "Todos" &&
+        product.categoria !== ventaProductoFiltro
+      ) {
+        return false;
+      }
+
+      if (search) {
+        const tallesTexto =
+          Array.isArray(product.talles)
+            ? product.talles
+                .map((t) => t.talle)
+                .join(" ")
+            : "";
+
+        const searchableText = [
+          product.nombre,
+          product.categoria,
+          product.talla,
+          tallesTexto
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (
+          !searchableText.includes(search)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
     }
+  );
 
-    return true;
-  });
-
-  // Primero los productos con más stock
   products.sort((a, b) => {
-    const stockA = Number(a.cantidad) || 0;
-    const stockB = Number(b.cantidad) || 0;
+    const stockA =
+      obtenerStockTotalProducto(a);
+
+    const stockB =
+      obtenerStockTotalProducto(b);
 
     return stockB - stockA;
   });
 
-  // Contador
   if (count) {
     count.textContent =
       products.length === 1
@@ -155,72 +304,90 @@ function renderProductPicker() {
         : `${products.length} productos disponibles`;
   }
 
-  // Sin productos
   if (!products.length) {
     grid.innerHTML = `
       <div class="producto-picker-empty">
-
         <div class="producto-empty-icon">
           ⌕
         </div>
 
-        <strong>No encontramos productos</strong>
+        <strong>
+          No encontramos productos
+        </strong>
 
         <span>
           Probá con otro nombre o cambiá el filtro.
         </span>
-
       </div>
     `;
 
     return;
   }
 
-  // Crear tarjetas
   grid.innerHTML = products
     .map((product) => {
 
       const id = Number(product.id);
-      const stock = Number(product.cantidad) || 0;
 
-      const nombre = escapeProductHTML(
-        product.nombre || "Producto sin nombre"
-      );
+      const stock =
+        obtenerStockTotalProducto(product);
 
-      const categoria = escapeProductHTML(
-        product.categoria || "Sin categoría"
-      );
+      const nombre =
+        escapeProductHTML(
+          product.nombre ||
+          "Producto sin nombre"
+        );
 
-      const talla = product.talla
-        ? escapeProductHTML(product.talla)
-        : "Sin talle";
+      const categoria =
+        escapeProductHTML(
+          product.categoria ||
+          "Sin categoría"
+        );
 
-      // Imagen
-      const image = product.imagen_url
-        ? `
-          <img
-            src="${escapeProductHTML(product.imagen_url)}"
-            alt="${nombre}"
-            loading="lazy"
-          />
-        `
-        : `
-          <div class="producto-card-no-image">
-            <span>⌑</span>
-          </div>
-        `;
+      const tallesDisponibles =
+        obtenerTallesDisponibles(product);
 
-      // Icono según categoría
+      const tallesTexto =
+        tallesDisponibles.length
+          ? tallesDisponibles
+              .map(
+                (t) =>
+                  `${escapeProductHTML(
+                    t.talle
+                  )} (${Number(t.cantidad)})`
+              )
+              .join(", ")
+          : "Sin talle";
+
+      const image =
+        product.imagen_url
+          ? `
+            <img
+              src="${escapeProductHTML(
+                product.imagen_url
+              )}"
+              alt="${nombre}"
+              loading="lazy"
+            />
+          `
+          : `
+            <div class="producto-card-no-image">
+              <span>⌑</span>
+            </div>
+          `;
+
       let categoriaIcon = "📦";
 
       if (
-        String(product.categoria).toLowerCase() === "ropa"
+        String(product.categoria)
+          .toLowerCase() === "ropa"
       ) {
         categoriaIcon = "👕";
       }
 
       if (
-        String(product.categoria).toLowerCase() === "accesorios"
+        String(product.categoria)
+          .toLowerCase() === "accesorios"
       ) {
         categoriaIcon = "👜";
       }
@@ -232,39 +399,31 @@ function renderProductPicker() {
           onclick="selectVentaProductById(${id})"
         >
 
-          <!-- IMAGEN -->
           <div class="producto-picker-image">
-
             ${image}
 
             <span class="producto-stock-badge">
-              ${stock} disponible${stock === 1 ? "" : "s"}
+              ${stock}
+              disponible${stock === 1 ? "" : "s"}
             </span>
-
           </div>
 
-
-          <!-- INFORMACIÓN -->
           <div class="producto-picker-info">
 
-            <!-- CATEGORÍA -->
             <span class="producto-picker-category">
-              ${categoriaIcon} ${categoria}
+              ${categoriaIcon}
+              ${categoria}
             </span>
 
-
-            <!-- NOMBRE -->
             <strong class="producto-picker-name">
               ${nombre}
             </strong>
 
-
-            <!-- DETALLES -->
             <div class="producto-picker-meta">
 
               <span>
-                Talle:
-                <b>${talla}</b>
+                Talles:
+                <b>${tallesTexto}</b>
               </span>
 
               <span>
@@ -282,110 +441,220 @@ function renderProductPicker() {
     .join("");
 }
 
-// ──────────────────────────────────────────────
-// SELECCIONAR POR ID
-// ──────────────────────────────────────────────
+
+// ══════════════════════════════════════════════
+// SELECCIONAR PRODUCTO
+// ══════════════════════════════════════════════
 
 function selectVentaProductById(productId) {
-  const product = ventaProductos.find(
-    (item) => String(item.id) === String(productId),
-  );
+  const product =
+    ventaProductos.find(
+      (item) =>
+        String(item.id) ===
+        String(productId)
+    );
 
   if (!product) return;
 
   selectVentaProduct(product, true);
 }
 
-// ──────────────────────────────────────────────
-// SELECCIONAR PRODUCTO
-// ──────────────────────────────────────────────
 
-function selectVentaProduct(product, closeModal = true) {
-  const productInput = document.getElementById("v-prod");
+// ══════════════════════════════════════════════
+// SELECCIONAR PRODUCTO PARA LA VENTA
+// ══════════════════════════════════════════════
 
-  const selector = document.getElementById("venta-producto-selector");
+function selectVentaProduct(
+  product,
+  closeModal = true
+) {
+  if (!product) return;
 
-  const selected = document.getElementById("venta-producto-selected");
+  const prodInput =
+    document.getElementById("v-prod");
 
-  const selectedImg = document.getElementById("venta-producto-selected-img");
+  const selector =
+    document.getElementById(
+      "venta-producto-selector"
+    );
 
-  const selectedName = document.getElementById("venta-producto-selected-name");
+  const selected =
+    document.getElementById(
+      "venta-producto-selected"
+    );
 
-  const selectedDetails = document.getElementById(
-    "venta-producto-selected-details",
-  );
+  const selectedImg =
+    document.getElementById(
+      "venta-producto-selected-img"
+    );
 
-  const stockInfo = document.getElementById("v-stock-info");
+  const selectedName =
+    document.getElementById(
+      "venta-producto-selected-name"
+    );
 
-  const quantityInput = document.getElementById("v-cantidad");
+  const selectedDetails =
+    document.getElementById(
+      "venta-producto-selected-details"
+    );
 
-  if (!productInput) return;
+  const cantidadInput =
+    document.getElementById(
+      "v-cantidad"
+    );
 
-  // Guardamos el ID real
-  productInput.value = product.id;
+  const stockInfo =
+    document.getElementById(
+      "v-stock-info"
+    );
 
-  // Guardamos también información útil
-  productInput.dataset.stock = product.cantidad;
-  productInput.dataset.nombre = product.nombre || "";
-  productInput.dataset.categoria = product.categoria || "";
-  productInput.dataset.talla = product.talla || "";
+  const {
+    field: talleField,
+    select: talleSelect
+  } = asegurarSelectorTalle();
 
-  // Ocultar selector inicial
-  if (selector) {
-    selector.style.display = "none";
+  if (prodInput) {
+    prodInput.value =
+      String(product.id);
+
+    prodInput.dataset.stock =
+      String(
+        obtenerStockTotalProducto(
+          product
+        )
+      );
+
+    prodInput.dataset.producto =
+      product.nombre || "";
+
+    prodInput.dataset.categoria =
+      product.categoria || "";
   }
 
-  // Mostrar tarjeta seleccionada
-  if (selected) {
-    selected.style.display = "flex";
+  if (selectedName) {
+    selectedName.textContent =
+      product.nombre ||
+      "Producto";
   }
 
-  // Imagen
+  if (selectedDetails) {
+    selectedDetails.textContent =
+      product.categoria || "";
+  }
+
   if (selectedImg) {
     if (product.imagen_url) {
-      selectedImg.src = product.imagen_url;
-      selectedImg.alt = product.nombre || "Producto";
-      selectedImg.style.display = "block";
+      selectedImg.src =
+        product.imagen_url;
+
+      selectedImg.style.display =
+        "block";
     } else {
-      selectedImg.removeAttribute("src");
-      selectedImg.alt = "";
-      selectedImg.style.display = "none";
+      selectedImg.removeAttribute(
+        "src"
+      );
+
+      selectedImg.style.display =
+        "none";
     }
   }
 
-  // Nombre
-  if (selectedName) {
-    selectedName.textContent = product.nombre || "Producto";
+  if (selected) {
+    selected.style.display =
+      "flex";
   }
 
-  // Detalles
-  if (selectedDetails) {
-    const talla = product.talla ? `Talle ${product.talla}` : "Sin talle";
-
-    const categoria = product.categoria || "Sin categoría";
-
-    selectedDetails.textContent = `${talla} · ${categoria} · Stock disponible: ${product.cantidad}`;
+  if (selector) {
+    selector.style.display =
+      "none";
   }
 
-  // Stock disponible
-  if (stockInfo) {
-    stockInfo.textContent = `Stock disponible: ${product.cantidad}`;
+  const talles =
+    Array.isArray(product.talles)
+      ? product.talles
+      : [];
 
-    stockInfo.classList.add("active");
-  }
+  talleSelect.innerHTML = `
+    <option value="">
+      Seleccionar talle
+    </option>
+  `;
 
-  // Limitar cantidad máxima
-  if (quantityInput) {
-    quantityInput.max = product.cantidad;
+  const tallesDisponibles =
+    talles.filter(
+      (t) =>
+        Number(t.cantidad) > 0
+    );
 
-    const currentQuantity = parseInt(quantityInput.value, 10) || 1;
+  if (talles.length > 0) {
 
-    if (currentQuantity > Number(product.cantidad)) {
-      quantityInput.value = product.cantidad;
+    talleField.style.display =
+      tallesDisponibles.length
+        ? "block"
+        : "none";
+
+    tallesDisponibles.forEach(
+      (t) => {
+
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          String(t.talle);
+
+        option.textContent =
+          `${t.talle} — ${Number(
+            t.cantidad
+          )} disponible(s)`;
+
+        option.dataset.stock =
+          String(
+            Number(t.cantidad) || 0
+          );
+
+        talleSelect.appendChild(
+          option
+        );
+      }
+    );
+
+    talleSelect.value = "";
+
+    if (cantidadInput) {
+      cantidadInput.value = "1";
+      cantidadInput.removeAttribute(
+        "max"
+      );
     }
 
-    if (currentQuantity < 1) {
-      quantityInput.value = 1;
+    if (stockInfo) {
+      stockInfo.textContent =
+        tallesDisponibles.length
+          ? "Seleccioná un talle"
+          : "Sin stock disponible";
+    }
+
+  } else {
+
+    talleField.style.display =
+      "none";
+
+    talleSelect.value = "";
+
+    const stock =
+      Number(product.cantidad) || 0;
+
+    if (stockInfo) {
+      stockInfo.textContent =
+        `Stock disponible: ${stock}`;
+    }
+
+    if (cantidadInput) {
+      cantidadInput.value = "1";
+      cantidadInput.max =
+        String(stock);
     }
   }
 
@@ -394,130 +663,427 @@ function selectVentaProduct(product, closeModal = true) {
   }
 }
 
-// ──────────────────────────────────────────────
-// LIMPIAR PRODUCTO SELECCIONADO
-// ──────────────────────────────────────────────
+
+// ══════════════════════════════════════════════
+// LIMPIAR PRODUCTO
+// ══════════════════════════════════════════════
 
 function clearSelectedVentaProduct() {
-  const productInput = document.getElementById("v-prod");
+  const prodInput =
+    document.getElementById("v-prod");
 
-  const selector = document.getElementById("venta-producto-selector");
+  const selected =
+    document.getElementById(
+      "venta-producto-selected"
+    );
 
-  const selected = document.getElementById("venta-producto-selected");
+  const selector =
+    document.getElementById(
+      "venta-producto-selector"
+    );
 
-  const stockInfo = document.getElementById("v-stock-info");
+  const cantidadInput =
+    document.getElementById(
+      "v-cantidad"
+    );
 
-  const quantityInput = document.getElementById("v-cantidad");
+  const talleField =
+    document.getElementById(
+      "venta-talle-field"
+    );
 
-  if (productInput) {
-    productInput.value = "";
-    productInput.removeAttribute("data-stock");
-    productInput.removeAttribute("data-nombre");
-    productInput.removeAttribute("data-categoria");
-    productInput.removeAttribute("data-talla");
-  }
+  const talleSelect =
+    document.getElementById(
+      "v-talle"
+    );
 
-  if (selector) {
-    selector.style.display = "flex";
+  const stockInfo =
+    document.getElementById(
+      "v-stock-info"
+    );
+
+  const talleInfo =
+    document.getElementById(
+      "v-talle-info"
+    );
+
+  if (prodInput) {
+    prodInput.value = "";
+
+    delete prodInput.dataset.stock;
+    delete prodInput.dataset.producto;
+    delete prodInput.dataset.categoria;
   }
 
   if (selected) {
-    selected.style.display = "none";
+    selected.style.display =
+      "none";
+  }
+
+  if (selector) {
+    selector.style.display = "";
+  }
+
+  if (talleSelect) {
+    talleSelect.innerHTML = `
+      <option value="">
+        Seleccionar talle
+      </option>
+    `;
+
+    talleSelect.value = "";
+  }
+
+  if (talleField) {
+    talleField.style.display =
+      "none";
+  }
+
+  if (cantidadInput) {
+    cantidadInput.value = 1;
+    cantidadInput.max = "";
   }
 
   if (stockInfo) {
-    stockInfo.textContent = "Seleccioná un producto";
-
-    stockInfo.classList.remove("active");
+    stockInfo.textContent = "";
   }
 
-  if (quantityInput) {
-    quantityInput.removeAttribute("max");
-    quantityInput.value = "1";
+  if (talleInfo) {
+    talleInfo.textContent = "";
   }
 }
 
-// ──────────────────────────────────────────────
-// BUSCADOR
-// ──────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
-  const search = document.getElementById("producto-search");
+// ══════════════════════════════════════════════
+// DOM
+// ══════════════════════════════════════════════
 
-  if (search) {
-    search.addEventListener("input", () => {
-      renderProductPicker();
-    });
-  }
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
 
-  // ESC para cerrar
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeProductModal();
+    const search =
+      document.getElementById(
+        "producto-search"
+      );
+
+    if (search) {
+      search.addEventListener(
+        "input",
+        () =>
+          renderProductPicker()
+      );
     }
-  });
-});
+
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Escape"
+        ) {
+          closeProductModal();
+        }
+      }
+    );
+  }
+);
+
+
+// ══════════════════════════════════════════════
+// CARGAR PRODUCTOS
+// ══════════════════════════════════════════════
 
 async function loadProductOptions() {
-  const { data, error } = await sb
-    .from("stock")
-    .select("*")
-    .order("categoria")
-    .order("nombre");
+  try {
 
-  if (error) {
-    console.error("Error cargando productos:", error);
+    const {
+      data: productos,
+      error: productosError
+    } = await sb
+      .from("stock")
+      .select("*")
+      .order("categoria")
+      .order("nombre");
 
-    ventaProductos = [];
+    if (productosError) {
+      throw productosError;
+    }
+
+    const ids =
+      (productos || []).map(
+        (p) => p.id
+      );
+
+    let talles = [];
+
+    if (ids.length > 0) {
+
+      const {
+        data,
+        error: tallesError
+      } = await sb
+        .from("producto_talles")
+        .select("*")
+        .in(
+          "producto_id",
+          ids
+        )
+        .order("talle");
+
+      if (tallesError) {
+        throw tallesError;
+      }
+
+      talles = data || [];
+    }
+
+    const tallesPorProducto = {};
+
+    talles.forEach((t) => {
+
+      if (
+        !tallesPorProducto[
+          t.producto_id
+        ]
+      ) {
+        tallesPorProducto[
+          t.producto_id
+        ] = [];
+      }
+
+      tallesPorProducto[
+        t.producto_id
+      ].push({
+        id: t.id,
+        talle: t.talle,
+        cantidad:
+          Number(t.cantidad) || 0
+      });
+    });
+
+    ventaProductos =
+      (productos || []).map(
+        (producto) => {
+
+          const tallesProducto =
+            tallesPorProducto[
+              producto.id
+            ] || [];
+
+          const stockTotal =
+            tallesProducto.length
+              ? tallesProducto.reduce(
+                  (
+                    total,
+                    talle
+                  ) =>
+                    total +
+                    Number(
+                      talle.cantidad
+                    ),
+                  0
+                )
+              : Number(
+                  producto.cantidad
+                ) || 0;
+
+          return {
+            ...producto,
+
+            // IMPORTANTE:
+            // mantenemos cantidad sincronizada
+            // para que toda la app vea el stock real
+            cantidad:
+              stockTotal,
+
+            talles:
+              tallesProducto
+          };
+        }
+      );
 
     renderProductPicker();
+
+  } catch (error) {
+
+    console.error(
+      "Error cargando productos para venta:",
+      error
+    );
+
+    showToast(
+      "No se pudieron cargar los productos",
+      "error"
+    );
+  }
+}
+
+
+// ══════════════════════════════════════════════
+// ACTUALIZAR STOCK POR TALLE
+// ══════════════════════════════════════════════
+
+function actualizarStockPorTalle() {
+
+  const talleSelect =
+    document.getElementById(
+      "v-talle"
+    );
+
+  const cantidadInput =
+    document.getElementById(
+      "v-cantidad"
+    );
+
+  const stockInfo =
+    document.getElementById(
+      "v-stock-info"
+    );
+
+  const talleInfo =
+    document.getElementById(
+      "v-talle-info"
+    );
+
+  if (!talleSelect) return;
+
+  const productoId =
+    Number(
+      document.getElementById(
+        "v-prod"
+      )?.value
+    );
+
+  const producto =
+    ventaProductos.find(
+      (p) =>
+        Number(p.id) ===
+        productoId
+    );
+
+  if (!producto) return;
+
+  const talleSeleccionado =
+    String(
+      talleSelect.value || ""
+    ).trim();
+
+  if (!talleSeleccionado) {
+
+    if (cantidadInput) {
+      cantidadInput.removeAttribute(
+        "max"
+      );
+    }
+
+    if (talleInfo) {
+      talleInfo.textContent = "";
+    }
+
+    if (stockInfo) {
+      stockInfo.textContent =
+        "Seleccioná un talle";
+    }
 
     return;
   }
 
-  ventaProductos = Array.isArray(data) ? data : [];
-
-  console.log("Productos cargados para venta:", ventaProductos);
-
-  renderProductPicker();
-
-  // Si ya había un producto seleccionado,
-  // volver a mostrarlo después de actualizar stock.
-  const productInput = document.getElementById("v-prod");
-
-  if (productInput && productInput.value) {
-    const product = ventaProductos.find(
-      (item) => String(item.id) === String(productInput.value),
+  const talle =
+    producto.talles?.find(
+      (t) =>
+        String(t.talle) ===
+        talleSeleccionado
     );
 
-    if (product) {
-      selectVentaProduct(product, false);
-    } else {
-      clearSelectedVentaProduct();
-    }
+  if (!talle) return;
+
+  const stock =
+    Number(talle.cantidad) || 0;
+
+  if (cantidadInput) {
+    cantidadInput.max =
+      String(stock);
+  }
+
+  if (stockInfo) {
+    stockInfo.textContent =
+      `Stock disponible: ${stock}`;
+  }
+
+  if (talleInfo) {
+    talleInfo.textContent =
+      `Talle ${talle.talle}: ${stock} disponible(s)`;
+  }
+
+  const cantidadActual =
+    Number(
+      cantidadInput?.value || 0
+    );
+
+  if (
+    cantidadActual > stock &&
+    cantidadInput
+  ) {
+    cantidadInput.value =
+      stock > 0
+        ? 1
+        : 0;
   }
 }
 
-// ------------------------------------------------
+
+// ══════════════════════════════════════════════
 // REGISTRAR VENTA
-// ------------------------------------------------
+// ══════════════════════════════════════════════
 
 async function submitVenta() {
-  const productInput = document.getElementById("v-prod");
 
-  const quantityInput = document.getElementById("v-cantidad");
+  const productInput =
+    document.getElementById(
+      "v-prod"
+    );
 
-  const currencyInput = document.getElementById("v-cur");
+  const quantityInput =
+    document.getElementById(
+      "v-cantidad"
+    );
 
-  const amountInput = document.getElementById("v-amt");
+  const currencyInput =
+    document.getElementById(
+      "v-cur"
+    );
 
-  const methodInput = document.getElementById("v-met");
+  const amountInput =
+    document.getElementById(
+      "v-amt"
+    );
 
-  const noteInput = document.getElementById("v-nota");
+  const methodInput =
+    document.getElementById(
+      "v-met"
+    );
 
-  const errorText = document.getElementById("v-err");
+  const noteInput =
+    document.getElementById(
+      "v-nota"
+    );
 
-  const button = document.getElementById("v-btn");
+  asegurarSelectorTalle();
+
+  const talleInput =
+    document.getElementById(
+      "v-talle"
+    );
+
+  const errorText =
+    document.getElementById(
+      "v-err"
+    );
+
+  const button =
+    document.getElementById(
+      "v-btn"
+    );
 
   if (
     !productInput ||
@@ -530,157 +1096,496 @@ async function submitVenta() {
     return;
   }
 
-  const productId = productInput.value;
+  const productId =
+    Number(productInput.value);
 
-  const cantidad = parseInt(quantityInput.value, 10);
+  const cantidad =
+    parseInt(
+      quantityInput.value,
+      10
+    );
 
-  const moneda = currencyInput.value;
+  const moneda =
+    currencyInput.value;
 
-  const monto = parseFloat(amountInput.value);
+  const monto =
+    parseFloat(
+      amountInput.value
+    );
 
-  const metodo = methodInput.value;
+  const metodo =
+    methodInput.value;
 
-  const nota = noteInput.value.trim();
+  const nota =
+    noteInput.value.trim();
+
+  // AQUÍ SE TOMA EL TALLE
+  const talle =
+    talleInput
+      ? String(
+          talleInput.value || ""
+        ).trim()
+      : "";
 
   if (errorText) {
     errorText.textContent = "";
   }
 
-  // Producto
   if (!productId) {
     if (errorText) {
-      errorText.textContent = "Seleccioná un producto.";
+      errorText.textContent =
+        "Seleccioná un producto.";
     }
-
     return;
   }
 
-  // Cantidad
-  if (!Number.isInteger(cantidad) || cantidad <= 0) {
+  if (
+    !Number.isInteger(
+      cantidad
+    ) ||
+    cantidad <= 0
+  ) {
     if (errorText) {
-      errorText.textContent = "Ingresá una cantidad válida.";
+      errorText.textContent =
+        "Ingresá una cantidad válida.";
     }
-
     return;
   }
 
-  // Monto
-  if (!Number.isFinite(monto) || monto <= 0) {
+  if (
+    !Number.isFinite(monto) ||
+    monto <= 0
+  ) {
     if (errorText) {
-      errorText.textContent = "Ingresá un monto válido.";
+      errorText.textContent =
+        "Ingresá un monto válido.";
     }
-
     return;
   }
 
-  // Consultar stock actual
-  const { data: producto, error: stockError } = await sb
+  const {
+    data: producto,
+    error: productoError
+  } = await sb
     .from("stock")
     .select("*")
     .eq("id", productId)
     .single();
 
-  if (stockError || !producto) {
+  if (
+    productoError ||
+    !producto
+  ) {
+    console.error(
+      "Error buscando producto:",
+      productoError
+    );
+
     if (errorText) {
-      errorText.textContent = "No se pudo encontrar el producto.";
+      errorText.textContent =
+        "No se pudo encontrar el producto.";
     }
 
-    console.error(stockError);
     return;
   }
 
-  // Verificar stock
-  if (Number(producto.cantidad) < cantidad) {
+  const {
+    data: tallesProducto,
+    error: tallesError
+  } = await sb
+    .from("producto_talles")
+    .select("*")
+    .eq(
+      "producto_id",
+      productId
+    )
+    .order("talle");
+
+  if (tallesError) {
+
+    console.error(
+      "Error buscando talles:",
+      tallesError
+    );
+
     if (errorText) {
-      errorText.textContent = `Stock insuficiente. Disponible: ${producto.cantidad}.`;
+      errorText.textContent =
+        "No se pudieron consultar los talles.";
+    }
+
+    return;
+  }
+
+  const talles =
+    tallesProducto || [];
+
+  if (
+    talles.length > 0 &&
+    !talle
+  ) {
+
+    if (errorText) {
+      errorText.textContent =
+        "Seleccioná un talle.";
+    }
+
+    return;
+  }
+
+  let stockDisponible = 0;
+
+  if (talle) {
+
+    const talleData =
+      talles.find(
+        (t) =>
+          String(t.talle) ===
+          String(talle)
+      );
+
+    if (!talleData) {
+
+      if (errorText) {
+        errorText.textContent =
+          "El talle seleccionado no existe.";
+      }
+
+      return;
+    }
+
+    stockDisponible =
+      Number(
+        talleData.cantidad
+      ) || 0;
+
+  } else {
+
+    stockDisponible =
+      Number(
+        producto.cantidad
+      ) || 0;
+  }
+
+  if (
+    stockDisponible <
+    cantidad
+  ) {
+
+    if (errorText) {
+      errorText.textContent =
+        `Stock insuficiente. Disponible: ${stockDisponible}.`;
     }
 
     return;
   }
 
   if (button) {
-    button.textContent = "Guardando...";
-    button.disabled = true;
+    button.textContent =
+      "Guardando...";
+
+    button.disabled =
+      true;
   }
 
-  // Registrar venta + descontar stock
-  // mediante una sola operación en Supabase.
-  const { data: resultado, error: ventaError } = await sb.rpc(
-    "registrar_venta",
-    {
-      p_producto_id: Number(producto.id),
-      p_cantidad: cantidad,
-      p_moneda: moneda,
-      p_monto: monto,
-      p_metodo: metodo,
-      p_nota: nota || "",
-      p_vendedor: currentUser ? currentUser.display : "Sin vendedor",
-    },
-  );
+  try {
 
-  if (button) {
-    button.textContent = "Registrar venta";
+    if (talle) {
 
-    button.disabled = false;
-  }
+      const {
+        data: descuento,
+        error: descuentoError
+      } = await sb.rpc(
+        "descontar_stock_talle",
+        {
+          p_producto_id:
+            Number(productId),
 
-  if (ventaError) {
-    console.error(ventaError);
+          p_talle:
+            talle,
 
-    if (errorText) {
-      if (
-        ventaError.message &&
-        ventaError.message.includes("STOCK_INSUFICIENTE")
-      ) {
-        errorText.textContent = "No hay suficiente stock para esa cantidad.";
-      } else {
-        errorText.textContent = "No se pudo registrar la venta.";
+          p_cantidad:
+            Number(cantidad)
+        }
+      );
+
+      if (descuentoError) {
+
+        console.error(
+          "Error descontando stock por talle:",
+          descuentoError
+        );
+
+        throw new Error(
+          "No se pudo descontar el stock del talle."
+        );
+      }
+
+    } else {
+
+      const nuevoStock =
+        stockDisponible -
+        cantidad;
+
+      const {
+        error: stockUpdateError
+      } = await sb
+        .from("stock")
+        .update({
+          cantidad:
+            nuevoStock
+        })
+        .eq(
+          "id",
+          productId
+        );
+
+      if (stockUpdateError) {
+
+        console.error(
+          "Error actualizando stock:",
+          stockUpdateError
+        );
+
+        throw new Error(
+          "No se pudo actualizar el stock."
+        );
       }
     }
 
-    return;
-  }
 
-  // Limpiar formulario
-  productInput.value = "";
+    // ACTUALIZAR STOCK TOTAL
+    if (talle) {
 
-  quantityInput.value = "1";
-  quantityInput.removeAttribute("max");
+      const {
+        data:
+          tallesActualizados,
+        error:
+          tallesActualizadosError
+      } = await sb
+        .from("producto_talles")
+        .select("cantidad")
+        .eq(
+          "producto_id",
+          productId
+        );
 
-  amountInput.value = "";
-  noteInput.value = "";
+      if (
+        tallesActualizadosError
+      ) {
 
-  const stockInfo = document.getElementById("v-stock-info");
+        console.error(
+          tallesActualizadosError
+        );
 
-  if (stockInfo) {
-    stockInfo.textContent = "Seleccioná un producto";
-  }
+        throw new Error(
+          "No se pudo actualizar el stock total."
+        );
+      }
 
-  clearSelectedVentaProduct();
+      const nuevoTotal =
+        (
+          tallesActualizados ||
+          []
+        ).reduce(
+          (
+            total,
+            item
+          ) =>
+            total +
+            Number(
+              item.cantidad || 0
+            ),
+          0
+        );
 
-  document.getElementById("v-cantidad").value = "1";
-  document.getElementById("v-amt").value = "";
-  document.getElementById("v-nota").value = "";
-  // Actualizar productos
-  await loadProductOptions();
+      const {
+        error: totalError
+      } = await sb
+        .from("stock")
+        .update({
+          cantidad:
+            nuevoTotal
+        })
+        .eq(
+          "id",
+          productId
+        );
 
-  showToast("✓ Venta registrada y stock actualizado", "ok");
+      if (totalError) {
 
-  // Actualizar Dashboard
-  await loadDashboard();
+        console.error(
+          totalError
+        );
 
-  // Si existe historial, actualizarlo también
-  if (document.getElementById("hist-tbody")) {
-    await loadHistorial();
+        throw new Error(
+          "No se pudo actualizar el stock total."
+        );
+      }
+    }
+
+
+    // ══════════════════════════════════════════
+    // GUARDAR VENTA
+    // ══════════════════════════════════════════
+
+    const {
+      error: ventaError
+    } = await sb
+      .from("ventas")
+      .insert({
+
+        fecha:
+          todayStr(),
+
+        hora:
+          nowTime(),
+
+        producto:
+          producto.nombre,
+
+        producto_id:
+          Number(producto.id),
+
+        categoria:
+          producto.categoria,
+
+        moneda:
+          moneda,
+
+        monto:
+          monto,
+
+        metodo:
+          metodo,
+
+        nota:
+          nota || null,
+
+        vendedor:
+          currentUser
+            ? currentUser.display
+            : "Sin vendedor",
+
+        cantidad:
+          Number(cantidad),
+
+        // ═════════════════════════════════════
+        // ESTE ES EL DATO IMPORTANTE
+        // EL TALLE SE GUARDA EN "talle"
+        // ═════════════════════════════════════
+        talle:
+          talle || null
+      });
+
+
+    if (ventaError) {
+
+      console.error(
+        "ERROR GUARDANDO VENTA:",
+        ventaError
+      );
+
+      throw new Error(
+        "El stock fue actualizado pero no se pudo guardar la venta."
+      );
+    }
+
+
+    // LIMPIAR FORMULARIO
+
+    productInput.value = "";
+
+    quantityInput.value =
+      "1";
+
+    quantityInput.removeAttribute(
+      "max"
+    );
+
+    amountInput.value =
+      "";
+
+    noteInput.value =
+      "";
+
+    if (talleInput) {
+
+      talleInput.value =
+        "";
+
+      talleInput.innerHTML = `
+        <option value="">
+          Seleccionar talle
+        </option>
+      `;
+    }
+
+    const stockInfo =
+      document.getElementById(
+        "v-stock-info"
+      );
+
+    if (stockInfo) {
+      stockInfo.textContent =
+        "Seleccioná un producto";
+    }
+
+    clearSelectedVentaProduct();
+
+    await loadProductOptions();
+
+    showToast(
+      "✓ Venta registrada y stock actualizado",
+      "ok"
+    );
+
+    await loadDashboard();
+
+    if (
+      document.getElementById(
+        "hist-tbody"
+      )
+    ) {
+      await loadHistorial();
+    }
+
+  } catch (error) {
+
+    console.error(
+      "ERROR REGISTRANDO VENTA:",
+      error
+    );
+
+    if (errorText) {
+      errorText.textContent =
+        error.message ||
+        "No se pudo registrar la venta.";
+    }
+
+  } finally {
+
+    if (button) {
+
+      button.textContent =
+        "Registrar venta";
+
+      button.disabled =
+        false;
+    }
   }
 }
 
-// ------------------------------------------------
+
+// ══════════════════════════════════════════════
 // DASHBOARD
-// ------------------------------------------------
+// ══════════════════════════════════════════════
 
 async function loadDashboard() {
-  const tbody = document.getElementById("today-tbody");
+
+  const tbody =
+    document.getElementById(
+      "today-tbody"
+    );
 
   if (!tbody) return;
 
@@ -695,68 +1600,212 @@ async function loadDashboard() {
     </tr>
   `;
 
-  const { data, error } = await sb
+  const {
+    data,
+    error
+  } = await sb
     .from("ventas")
     .select("*")
-    .eq("fecha", todayStr())
-    .order("created_at", {
-      ascending: false,
-    });
+    .order(
+      "created_at",
+      {
+        ascending: false
+      }
+    );
 
   if (error) {
-    showToast("Error al cargar datos", "fail");
 
-    console.error(error);
+    console.error(
+      "ERROR DASHBOARD:",
+      error
+    );
+
+    showToast(
+      "Error al cargar datos",
+      "fail"
+    );
+
     return;
   }
 
-  const ventas = data || [];
+  const todasLasVentas =
+    data || [];
 
-  const totalARS = ventas
-    .filter((sale) => sale.moneda === "ARS")
-    .reduce((total, sale) => total + Number(sale.monto), 0);
+  const fechaHoy =
+    todayStr();
 
-  const totalUSD = ventas
-    .filter((sale) => sale.moneda === "USD")
-    .reduce((total, sale) => total + Number(sale.monto), 0);
+  const ventas =
+    todasLasVentas.filter(
+      (sale) => {
 
-  const unidadesHoy = ventas.reduce(
-    (total, sale) => total + Number(sale.cantidad || 1),
-    0,
-  );
+        if (
+          sale.fecha &&
+          String(sale.fecha) ===
+            String(fechaHoy)
+        ) {
+          return true;
+        }
 
-  const ropa = ventas.filter((sale) => sale.categoria === "Ropa").length;
+        if (sale.created_at) {
 
-  const accesorios = ventas.filter(
-    (sale) => sale.categoria === "Accesorios",
-  ).length;
+          const fechaCreacion =
+            new Date(
+              sale.created_at
+            ).toLocaleDateString(
+              "es-AR"
+            );
 
-  // --------------------------------------------
-  // MÉTRICAS
-  // --------------------------------------------
+          return (
+            fechaCreacion ===
+            fechaHoy
+          );
+        }
 
-  const metrics = document.getElementById("metrics");
+        return false;
+      }
+    );
+
+
+  const totalARS =
+    ventas
+      .filter(
+        (sale) =>
+          sale.moneda ===
+          "ARS"
+      )
+      .reduce(
+        (
+          total,
+          sale
+        ) =>
+          total +
+          Number(
+            sale.monto || 0
+          ),
+        0
+      );
+
+
+  const totalUSD =
+    ventas
+      .filter(
+        (sale) =>
+          sale.moneda ===
+          "USD"
+      )
+      .reduce(
+        (
+          total,
+          sale
+        ) =>
+          total +
+          Number(
+            sale.monto || 0
+          ),
+        0
+      );
+
+
+  const unidadesHoy =
+    ventas.reduce(
+      (
+        total,
+        sale
+      ) =>
+        total +
+        Number(
+          sale.cantidad || 1
+        ),
+      0
+    );
+
+
+  const ropa =
+    ventas.filter(
+      (sale) =>
+        sale.categoria ===
+        "Ropa"
+    ).length;
+
+
+  const accesorios =
+    ventas.filter(
+      (sale) =>
+        sale.categoria ===
+        "Accesorios"
+    ).length;
+
+
+  const metrics =
+    document.getElementById(
+      "metrics"
+    );
+
 
   if (metrics) {
-    const { data: historial } = await sb
-      .from("ventas")
-      .select("moneda, monto, cantidad");
 
-    const ventasHistoricas = historial || [];
+    const acumARS =
+      todasLasVentas
+        .filter(
+          (v) =>
+            v.moneda ===
+            "ARS"
+        )
+        .reduce(
+          (
+            a,
+            b
+          ) =>
+            a +
+            Number(
+              b.monto || 0
+            ),
+          0
+        );
 
-    const acumARS = ventasHistoricas
-      .filter((v) => v.moneda === "ARS")
-      .reduce((a, b) => a + Number(b.monto), 0);
 
-    const acumUSD = ventasHistoricas
-      .filter((v) => v.moneda === "USD")
-      .reduce((a, b) => a + Number(b.monto), 0);
+    const acumUSD =
+      todasLasVentas
+        .filter(
+          (v) =>
+            v.moneda ===
+            "USD"
+        )
+        .reduce(
+          (
+            a,
+            b
+          ) =>
+            a +
+            Number(
+              b.monto || 0
+            ),
+          0
+        );
 
-    const acumBRL = ventasHistoricas
-      .filter((v) => v.moneda === "BRL")
-      .reduce((a, b) => a + Number(b.monto), 0);
+
+    const acumBRL =
+      todasLasVentas
+        .filter(
+          (v) =>
+            v.moneda ===
+            "BRL"
+        )
+        .reduce(
+          (
+            a,
+            b
+          ) =>
+            a +
+            Number(
+              b.monto || 0
+            ),
+          0
+        );
+
 
     metrics.innerHTML = `
+
       <div class="metric-card">
         <div class="metric-label">
           Ventas hoy
@@ -770,6 +1819,7 @@ async function loadDashboard() {
           operaciones
         </div>
       </div>
+
 
       <div class="metric-card">
         <div class="metric-label">
@@ -785,13 +1835,16 @@ async function loadDashboard() {
         </div>
       </div>
 
+
       <div class="metric-card">
         <div class="metric-label">
           Ingresos ARS hoy
         </div>
 
         <div class="metric-val">
-          $${totalARS.toLocaleString("es-AR")}
+          $${totalARS.toLocaleString(
+            "es-AR"
+          )}
         </div>
 
         <div class="metric-sub">
@@ -799,19 +1852,23 @@ async function loadDashboard() {
         </div>
       </div>
 
+
       <div class="metric-card">
         <div class="metric-label">
           Ingresos USD hoy
         </div>
 
         <div class="metric-val">
-          U$D ${totalUSD.toFixed(2)}
+          U$D ${totalUSD.toFixed(
+            2
+          )}
         </div>
 
         <div class="metric-sub">
           dólares
         </div>
       </div>
+
 
       <div class="metric-card">
         <div class="metric-label">
@@ -827,19 +1884,23 @@ async function loadDashboard() {
         </div>
       </div>
 
+
       <div class="metric-card">
         <div class="metric-label">
           Acumulado ARS
         </div>
 
         <div class="metric-val">
-          $${acumARS.toLocaleString("es-AR")}
+          $${acumARS.toLocaleString(
+            "es-AR"
+          )}
         </div>
 
         <div class="metric-sub">
           todos los tiempos
         </div>
       </div>
+
 
       <div class="metric-card">
         <div class="metric-label">
@@ -847,13 +1908,16 @@ async function loadDashboard() {
         </div>
 
         <div class="metric-val">
-          U$D ${acumUSD.toFixed(2)}
+          U$D ${acumUSD.toFixed(
+            2
+          )}
         </div>
 
         <div class="metric-sub">
           todos los tiempos
         </div>
       </div>
+
 
       <div class="metric-card">
         <div class="metric-label">
@@ -861,21 +1925,22 @@ async function loadDashboard() {
         </div>
 
         <div class="metric-val">
-          R$ ${acumBRL.toFixed(2)}
+          R$ ${acumBRL.toFixed(
+            2
+          )}
         </div>
 
         <div class="metric-sub">
           todos los tiempos
         </div>
       </div>
+
     `;
   }
 
-  // --------------------------------------------
-  // TABLA
-  // --------------------------------------------
 
   if (!ventas.length) {
+
     tbody.innerHTML = `
       <tr>
         <td colspan="8" class="empty">
@@ -887,86 +1952,174 @@ async function loadDashboard() {
     return;
   }
 
-  tbody.innerHTML = ventas
-    .map(
-      (sale) => `
-      <tr>
 
-        <td>
-          ${escapeHTML(sale.hora)}
-        </td>
+  tbody.innerHTML =
+    ventas
+      .map(
+        (sale) => {
 
-        <td>
-          ${escapeHTML(sale.producto)}
+          // ═══════════════════════════════
+          // LEEMOS "talle"
+          // ═══════════════════════════════
 
-          ${
-            sale.talla
-              ? `<br>
-                 <small>
-                   Talle: ${escapeHTML(sale.talla)}
-                 </small>`
-              : ""
-          }
+          const talle =
+            sale.talle ??
+            sale.talla ??
+            "";
 
-          ${
-            sale.nota
-              ? `<br>
-                 <span
-                   style="
-                     font-size:11px;
-                     color:var(--text3)
-                   "
-                 >
-                   ${escapeHTML(sale.nota)}
-                 </span>`
-              : ""
-          }
-        </td>
+          return `
 
-        <td>
-          <span
-            class="tag ${sale.categoria === "Ropa" ? "tag-ropa" : "tag-accs"}"
-          >
-            ${escapeHTML(sale.categoria)}
-          </span>
-        </td>
+            <tr>
 
-        <td>
-          ${Number(sale.cantidad || 1)}
-        </td>
+              <td>
+                ${escapeHTML(
+                  sale.hora || ""
+                )}
+              </td>
 
-        <td>
-          <span
-            class="tag tag-${String(sale.moneda).toLowerCase()}"
-          >
-            ${escapeHTML(sale.moneda)}
-          </span>
-        </td>
 
-        <td style="font-weight:500">
-          ${fmtMonto(sale.moneda, sale.monto)}
-        </td>
+              <td>
 
-        <td style="color:var(--text2)">
-          ${escapeHTML(sale.metodo)}
-        </td>
+                ${escapeHTML(
+                  sale.producto || ""
+                )}
 
-        <td style="color:var(--text2)">
-          ${escapeHTML(sale.vendedor)}
-        </td>
+                ${
+                  talle
+                    ? `
+                      <br>
 
-      </tr>
-    `,
-    )
-    .join("");
+                      <span
+                        style="
+                          display:inline-block;
+                          margin-top:5px;
+                          padding:3px 8px;
+                          border-radius:6px;
+                          background:rgba(212,175,55,.12);
+                          color:#d4af37;
+                          font-size:12px;
+                          font-weight:600;
+                        "
+                      >
+                        Talle:
+                        ${escapeHTML(
+                          talle
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+
+                ${
+                  sale.nota
+                    ? `
+                      <br>
+
+                      <span
+                        style="
+                          font-size:11px;
+                          color:var(--text3)
+                        "
+                      >
+                        ${escapeHTML(
+                          sale.nota
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+              </td>
+
+
+              <td>
+
+                <span
+                  class="tag ${
+                    sale.categoria ===
+                    "Ropa"
+                      ? "tag-ropa"
+                      : "tag-accs"
+                  }"
+                >
+                  ${escapeHTML(
+                    sale.categoria ||
+                    ""
+                  )}
+                </span>
+
+              </td>
+
+
+              <td>
+                ${Number(
+                  sale.cantidad || 1
+                )}
+              </td>
+
+
+              <td>
+
+                <span
+                  class="tag tag-${String(
+                    sale.moneda || ""
+                  ).toLowerCase()}"
+                >
+                  ${escapeHTML(
+                    sale.moneda || ""
+                  )}
+                </span>
+
+              </td>
+
+
+              <td
+                style="font-weight:500"
+              >
+                ${fmtMonto(
+                  sale.moneda,
+                  sale.monto
+                )}
+              </td>
+
+
+              <td
+                style="color:var(--text2)"
+              >
+                ${escapeHTML(
+                  sale.metodo || ""
+                )}
+              </td>
+
+
+              <td
+                style="color:var(--text2)"
+              >
+                ${escapeHTML(
+                  sale.vendedor || ""
+                )}
+              </td>
+
+            </tr>
+
+          `;
+        }
+      )
+      .join("");
 }
 
-// ------------------------------------------------
+
+// ══════════════════════════════════════════════
 // HISTORIAL
-// ------------------------------------------------
+// ══════════════════════════════════════════════
 
 async function loadHistorial() {
-  const tbody = document.getElementById("hist-tbody");
+
+  const tbody =
+    document.getElementById(
+      "hist-tbody"
+    );
 
   if (!tbody) return;
 
@@ -981,42 +2134,89 @@ async function loadHistorial() {
     </tr>
   `;
 
-  const vendorFilter = document.getElementById("f-vend")?.value || "";
 
-  const categoryFilter = document.getElementById("f-cat")?.value || "";
+  const vendorFilter =
+    document.getElementById(
+      "f-vend"
+    )?.value || "";
 
-  const currencyFilter = document.getElementById("f-cur")?.value || "";
 
-  let query = sb
-    .from("ventas")
-    .select("*")
-    .order("created_at", {
-      ascending: false,
-    })
-    .limit(200);
+  const categoryFilter =
+    document.getElementById(
+      "f-cat"
+    )?.value || "";
+
+
+  const currencyFilter =
+    document.getElementById(
+      "f-cur"
+    )?.value || "";
+
+
+  let query =
+    sb
+      .from("ventas")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(200);
+
 
   if (vendorFilter) {
-    query = query.eq("vendedor", vendorFilter);
+    query =
+      query.eq(
+        "vendedor",
+        vendorFilter
+      );
   }
+
 
   if (categoryFilter) {
-    query = query.eq("categoria", categoryFilter);
+    query =
+      query.eq(
+        "categoria",
+        categoryFilter
+      );
   }
+
 
   if (currencyFilter) {
-    query = query.eq("moneda", currencyFilter);
+    query =
+      query.eq(
+        "moneda",
+        currencyFilter
+      );
   }
 
-  const { data, error } = await query;
+
+  const {
+    data,
+    error
+  } = await query;
+
 
   if (error) {
-    showToast("Error al cargar historial", "fail");
+
+    showToast(
+      "Error al cargar historial",
+      "fail"
+    );
 
     console.error(error);
+
     return;
   }
 
-  if (!data || !data.length) {
+
+  if (
+    !data ||
+    !data.length
+  ) {
+
     tbody.innerHTML = `
       <tr>
         <td colspan="8" class="empty">
@@ -1028,83 +2228,173 @@ async function loadHistorial() {
     return;
   }
 
-  tbody.innerHTML = data
-    .map(
-      (sale) => `
-      <tr>
 
-        <td
-          style="
-            font-size:12px;
-            color:var(--text2)
-          "
-        >
-          ${escapeHTML(sale.fecha)}
-          ${escapeHTML(sale.hora)}
-        </td>
+  tbody.innerHTML =
+    data
+      .map(
+        (sale) => {
 
-        <td>
-          ${escapeHTML(sale.producto)}
+          // ═══════════════════════════════
+          // LEEMOS "talle"
+          // ═══════════════════════════════
 
-          ${
-            sale.talla
-              ? `<br>
-                 <small>
-                   Talle:
-                   ${escapeHTML(sale.talla)}
-                 </small>`
-              : ""
-          }
+          const talle =
+            sale.talle ??
+            sale.talla ??
+            "";
 
-          ${
-            sale.nota
-              ? `<br>
-                 <span
-                   style="
-                     font-size:11px;
-                     color:var(--text3)
-                   "
-                 >
-                   ${escapeHTML(sale.nota)}
-                 </span>`
-              : ""
-          }
-        </td>
+          return `
 
-        <td>
-          <span
-            class="tag ${sale.categoria === "Ropa" ? "tag-ropa" : "tag-accs"}"
-          >
-            ${escapeHTML(sale.categoria)}
-          </span>
-        </td>
+            <tr>
 
-        <td>
-          ${Number(sale.cantidad || 1)}
-        </td>
 
-        <td>
-          <span
-            class="tag tag-${String(sale.moneda).toLowerCase()}"
-          >
-            ${escapeHTML(sale.moneda)}
-          </span>
-        </td>
+              <td
+                style="
+                  font-size:12px;
+                  color:var(--text2);
+                "
+              >
 
-        <td style="font-weight:500">
-          ${fmtMonto(sale.moneda, sale.monto)}
-        </td>
+                ${escapeHTML(
+                  sale.fecha || ""
+                )}
 
-        <td style="color:var(--text2)">
-          ${escapeHTML(sale.metodo)}
-        </td>
+                ${escapeHTML(
+                  sale.hora || ""
+                )}
 
-        <td style="color:var(--text2)">
-          ${escapeHTML(sale.vendedor)}
-        </td>
+              </td>
 
-      </tr>
-    `,
-    )
-    .join("");
+
+              <td>
+
+                ${escapeHTML(
+                  sale.producto || ""
+                )}
+
+
+                ${
+                  talle
+                    ? `
+                      <br>
+
+                      <span
+                        style="
+                          display:inline-block;
+                          margin-top:5px;
+                          padding:3px 8px;
+                          border-radius:6px;
+                          background:rgba(212,175,55,.12);
+                          color:#d4af37;
+                          font-size:12px;
+                          font-weight:600;
+                        "
+                      >
+                        Talle:
+                        ${escapeHTML(
+                          talle
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+
+                ${
+                  sale.nota
+                    ? `
+                      <br>
+
+                      <span
+                        style="
+                          font-size:11px;
+                          color:var(--text3)
+                        "
+                      >
+                        ${escapeHTML(
+                          sale.nota
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+              </td>
+
+
+              <td>
+
+                <span
+                  class="tag ${
+                    sale.categoria ===
+                    "Ropa"
+                      ? "tag-ropa"
+                      : "tag-accs"
+                  }"
+                >
+                  ${escapeHTML(
+                    sale.categoria ||
+                    ""
+                  )}
+                </span>
+
+              </td>
+
+
+              <td>
+                ${Number(
+                  sale.cantidad || 1
+                )}
+              </td>
+
+
+              <td>
+
+                <span
+                  class="tag tag-${String(
+                    sale.moneda || ""
+                  ).toLowerCase()}"
+                >
+                  ${escapeHTML(
+                    sale.moneda || ""
+                  )}
+                </span>
+
+              </td>
+
+
+              <td
+                style="font-weight:500"
+              >
+                ${fmtMonto(
+                  sale.moneda,
+                  sale.monto
+                )}
+              </td>
+
+
+              <td
+                style="color:var(--text2)"
+              >
+                ${escapeHTML(
+                  sale.metodo || ""
+                )}
+              </td>
+
+
+              <td
+                style="color:var(--text2)"
+              >
+                ${escapeHTML(
+                  sale.vendedor || ""
+                )}
+              </td>
+
+
+            </tr>
+
+          `;
+        }
+      )
+      .join("");
 }

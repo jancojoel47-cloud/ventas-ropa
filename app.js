@@ -1,47 +1,681 @@
-// ══════════════════════════════════════════════
-// CONFIGURACIÓN SUPABASE
-// ══════════════════════════════════════════════
-
 const SUPABASE_URL = "https://wnaxkfnkhwveamrswwim.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nnJa7QKdYLiwxKEyvos9qg_YNRUU185";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
+let stockData = [];
+let productPickerData = [];
+let productPickerFilter = "Todos";
+let selectedVentaProducto = null;
 
-// ══════════════════════════════════════════════
+// ==============================
 // UTILIDADES
-// ══════════════════════════════════════════════
+// ==============================
 
 function todayStr() {
-  return new Date().toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return new Date().toLocaleDateString("es-AR");
 }
 
 function nowTime() {
   return new Date().toLocaleTimeString("es-AR", {
     hour: "2-digit",
-    minute: "2-digit",
+    minute: "2-digit"
   });
 }
 
-function fmtMonto(cur, amt) {
-  if (cur === "ARS") {
-    return "$" + Number(amt).toLocaleString("es-AR");
+function fmtMonto(moneda, monto) {
+  const valor = Number(monto || 0);
+
+  if (moneda === "ARS") {
+    return "$ " + valor.toLocaleString("es-AR", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    });
   }
 
-  if (cur === "USD") {
-    return "U$D " + Number(amt).toFixed(2);
+  if (moneda === "USD") {
+    return "U$D " + valor.toLocaleString("es-AR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
-  if (cur === "BRL") {
-    return "R$ " + Number(amt).toFixed(2);
+  if (moneda === "BRL") {
+    return "R$ " + valor.toLocaleString("es-AR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
-  return amt;
+  return valor.toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function showToast(message, type = "success") {
+  let toast = document.getElementById("toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+
+  clearTimeout(window.__toastTimer);
+
+  window.__toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
+
+  const target = document.getElementById(id);
+
+  if (target) {
+    target.classList.add("active");
+  }
+}
+
+// ==============================
+// LOGIN
+// ==============================
+
+async function doLogin() {
+  const userInput = document.getElementById("inp-user");
+  const passInput = document.getElementById("inp-pass");
+  const error = document.getElementById("login-err");
+  const button = document.querySelector("#screen-login .btn-accent");
+
+  const usuario = (userInput?.value || "").trim().toLowerCase();
+  const password = passInput?.value || "";
+
+  if (error) {
+    error.textContent = "";
+  }
+
+  if (!usuario || !password) {
+    if (error) {
+      error.textContent = "Completá usuario y contraseña.";
+    }
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Ingresando...";
+  }
+
+  try {
+    const { data, error: loginError } = await sb
+      .from("usuarios")
+      .select("id, usuario, nombre, rol")
+      .eq("usuario", usuario)
+      .eq("password", password)
+      .maybeSingle();
+
+    if (loginError) {
+      console.error("Error de login:", loginError);
+
+      if (error) {
+        error.textContent = "No se pudo conectar con el sistema.";
+      }
+
+      return;
+    }
+
+    if (!data) {
+      if (error) {
+        error.textContent = "Usuario o contraseña incorrectos.";
+      }
+
+      return;
+    }
+
+    currentUser = {
+      id: data.id,
+      usuario: data.usuario,
+      display: data.nombre,
+      rol: data.rol
+    };
+
+    const vendorChip = document.getElementById("vendor-chip");
+    const sidebarUserName = document.getElementById("sidebar-user-name");
+
+    if (vendorChip) {
+      vendorChip.textContent = data.nombre;
+    }
+
+    if (sidebarUserName) {
+      sidebarUserName.textContent = data.nombre;
+    }
+
+    const adminTab = document.getElementById("tab-btn-usuarios");
+    const adminMobileTab = document.getElementById("mob-tab-btn-usuarios");
+
+    const isAdmin = String(data.rol || "").toLowerCase() === "admin";
+
+    if (adminTab) {
+      adminTab.style.display = isAdmin ? "" : "none";
+    }
+
+    if (adminMobileTab) {
+      adminMobileTab.style.display = isAdmin ? "" : "none";
+    }
+
+    showScreen("screen-app");
+
+    await loadProductOptions();
+    await loadDashboard();
+
+  } catch (err) {
+    console.error("Error inesperado en login:", err);
+
+    if (error) {
+      error.textContent = "Ocurrió un error al iniciar sesión.";
+    }
+
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Ingresar";
+    }
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  selectedVentaProducto = null;
+
+  const userInput = document.getElementById("inp-user");
+  const passInput = document.getElementById("inp-pass");
+  const error = document.getElementById("login-err");
+
+  if (userInput) userInput.value = "";
+  if (passInput) passInput.value = "";
+  if (error) error.textContent = "";
+
+  showScreen("screen-login");
+}
+
+// Enter para iniciar sesión
+document.addEventListener("DOMContentLoaded", () => {
+  const passwordInput = document.getElementById("inp-pass");
+
+  if (passwordInput) {
+    passwordInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        doLogin();
+      }
+    });
+  }
+});
+
+// ==============================
+// NAVEGACIÓN ENTRE TABS
+// ==============================
+
+function goTab(tab, btn) {
+  // Quitar "active" de TODOS los botones del menú
+  document.querySelectorAll(".nav-tab").forEach((item) => {
+    item.classList.remove("active");
+  });
+
+  // Marcar solamente el botón actual
+  if (btn) {
+    btn.classList.add("active");
+  }
+
+  // Ocultar todas las secciones
+  document.querySelectorAll(".tab-content").forEach((section) => {
+    section.classList.remove("active");
+  });
+
+  // Mostrar solamente la sección seleccionada
+  const target = document.getElementById(`tab-${tab}`);
+
+  if (target) {
+    target.classList.add("active");
+  }
+
+  // Cargar los datos correspondientes
+  if (tab === "dashboard") {
+    loadDashboard();
+  }
+
+  if (tab === "stock") {
+    loadStock();
+  }
+
+  if (tab === "historial") {
+    loadHistorial();
+  }
+
+  if (tab === "usuarios") {
+    loadUsuarios();
+  }
+
+  if (tab === "cubitos") {
+    loadCubitos();
+  }
+}
+
+// ==============================
+// USUARIOS
+// ==============================
+
+async function loadUsuarios() {
+  const container = document.getElementById("usuarios-list");
+
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="loading-state">
+      Cargando usuarios...
+    </div>
+  `;
+
+  try {
+    const { data, error } = await sb
+      .from("usuarios")
+      .select("id, usuario, nombre, rol")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.error(error);
+
+      container.innerHTML = `
+        <div class="empty-state">
+          No se pudieron cargar los usuarios.
+        </div>
+      `;
+
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          No hay usuarios registrados.
+        </div>
+      `;
+
+      return;
+    }
+
+    container.innerHTML = data.map(user => `
+      <div class="usuario-card">
+        <div class="usuario-card-main">
+          <div class="usuario-avatar">
+            ${(user.nombre || user.usuario || "?").charAt(0).toUpperCase()}
+          </div>
+
+          <div class="usuario-info">
+            <strong>${escapeHTML(user.nombre || "")}</strong>
+            <span>@${escapeHTML(user.usuario || "")}</span>
+          </div>
+        </div>
+
+        <div class="usuario-card-side">
+          <span class="usuario-role">
+            ${escapeHTML(user.rol || "vendedor")}
+          </span>
+
+          ${
+            user.usuario !== "admin"
+              ? `
+                <button
+                  type="button"
+                  class="btn-danger-sm"
+                  onclick="eliminarUsuario(${user.id}, '${escapeJS(user.usuario || "")}')"
+                >
+                  Eliminar
+                </button>
+              `
+              : ""
+          }
+        </div>
+      </div>
+    `).join("");
+
+  } catch (err) {
+    console.error(err);
+
+    container.innerHTML = `
+      <div class="empty-state">
+        Ocurrió un error al cargar los usuarios.
+      </div>
+    `;
+  }
+}
+
+async function crearUsuario() {
+  const usuarioInput = document.getElementById("nuevo-usuario");
+  const nombreInput = document.getElementById("nuevo-nombre");
+  const passwordInput = document.getElementById("nuevo-password");
+  const rolInput = document.getElementById("nuevo-rol");
+  const error = document.getElementById("usuario-err");
+
+  const usuario = (usuarioInput?.value || "").trim().toLowerCase();
+  const nombre = (nombreInput?.value || "").trim();
+  const password = passwordInput?.value || "";
+  const rol = rolInput?.value || "vendedor";
+
+  if (error) {
+    error.textContent = "";
+  }
+
+  if (!usuario || !nombre || !password) {
+    if (error) {
+      error.textContent = "Completá todos los campos.";
+    }
+    return;
+  }
+
+  if (password.length < 4) {
+    if (error) {
+      error.textContent = "La contraseña debe tener al menos 4 caracteres.";
+    }
+    return;
+  }
+
+  try {
+    const { error: insertError } = await sb
+      .from("usuarios")
+      .insert({
+        usuario,
+        nombre,
+        password,
+        rol
+      });
+
+    if (insertError) {
+      console.error(insertError);
+
+      if (insertError.code === "23505") {
+        if (error) {
+          error.textContent = "Ese usuario ya existe.";
+        }
+      } else {
+        if (error) {
+          error.textContent = "No se pudo crear el usuario.";
+        }
+      }
+
+      return;
+    }
+
+    if (usuarioInput) usuarioInput.value = "";
+    if (nombreInput) nombreInput.value = "";
+    if (passwordInput) passwordInput.value = "";
+
+    showToast("Usuario creado correctamente.");
+    await loadUsuarios();
+
+  } catch (err) {
+    console.error(err);
+
+    if (error) {
+      error.textContent = "Ocurrió un error al crear el usuario.";
+    }
+  }
+}
+
+async function eliminarUsuario(id, usuario) {
+  if (usuario === "admin") {
+    showToast("El usuario admin no se puede eliminar.", "error");
+    return;
+  }
+
+  const confirmar = confirm(
+    `¿Seguro que querés eliminar al usuario "${usuario}"?`
+  );
+
+  if (!confirmar) return;
+
+  try {
+    const { error } = await sb
+      .from("usuarios")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      showToast("No se pudo eliminar el usuario.", "error");
+      return;
+    }
+
+    showToast("Usuario eliminado.");
+    await loadUsuarios();
+
+  } catch (err) {
+    console.error(err);
+    showToast("Ocurrió un error.", "error");
+  }
+}
+
+// ==============================
+// DASHBOARD
+// ==============================
+
+async function loadDashboard() {
+  const today = todayStr();
+
+  try {
+    const { data: ventas, error } = await sb
+      .from("ventas")
+      .select("*")
+      .eq("fecha", today)
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error("Error cargando dashboard:", error);
+      return;
+    }
+
+    const lista = ventas || [];
+
+    let totalARS = 0;
+    let totalUSD = 0;
+    let ropa = 0;
+    let accesorios = 0;
+
+    lista.forEach(sale => {
+      const monto = Number(sale.monto || 0);
+
+      if (sale.moneda === "ARS") {
+        totalARS += monto;
+      }
+
+      if (sale.moneda === "USD") {
+        totalUSD += monto;
+      }
+
+      if (sale.categoria === "Ropa") {
+        ropa++;
+      }
+
+      if (sale.categoria === "Accesorios") {
+        accesorios++;
+      }
+    });
+
+    setText("metric-ventas", lista.length);
+    setText("metric-ars", fmtMonto("ARS", totalARS));
+    setText("metric-usd", fmtMonto("USD", totalUSD));
+    setText("metric-ropa", ropa);
+    setText("metric-accesorios", accesorios);
+
+    const tbody = document.getElementById("dashboard-ventas-body");
+
+    if (!tbody) return;
+
+    if (lista.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty">
+            No hay ventas registradas hoy.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML = lista.map(sale => `
+      <tr>
+        <td>${escapeHTML(sale.hora || "")}</td>
+
+        <td>
+          <strong>${escapeHTML(sale.producto || "")}</strong>
+
+          ${
+            sale.cantidad
+              ? `<small>${sale.cantidad} unidad${Number(sale.cantidad) === 1 ? "" : "es"}</small>`
+              : ""
+          }
+
+          ${
+            sale.talle
+              ? `<small>Talle: ${escapeHTML(sale.talle)}</small>`
+              : ""
+          }
+
+          ${
+            sale.nota
+              ? `<small>${escapeHTML(sale.nota)}</small>`
+              : ""
+          }
+        </td>
+
+        <td>${escapeHTML(sale.categoria || "")}</td>
+
+        <td>${escapeHTML(sale.moneda || "")}</td>
+
+        <td>${fmtMonto(sale.moneda, sale.monto)}</td>
+
+        <td>${escapeHTML(sale.metodo || "")}</td>
+
+        <td>${escapeHTML(sale.vendedor || "")}</td>
+      </tr>
+    `).join("");
+
+  } catch (err) {
+    console.error("Error inesperado dashboard:", err);
+  }
+}
+
+// ==============================
+// HISTORIAL
+// ==============================
+
+async function loadHistorial() {
+  const tbody = document.getElementById("historial-body");
+
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="8" class="table-empty">
+        Cargando historial...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const { data, error } = await sb
+      .from("ventas")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error(error);
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="table-empty">
+            No se pudo cargar el historial.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="table-empty">
+            Todavía no hay ventas registradas.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML = data.map(sale => `
+      <tr>
+        <td>${escapeHTML(sale.fecha || "")}</td>
+        <td>${escapeHTML(sale.hora || "")}</td>
+
+        <td>
+          <strong>${escapeHTML(sale.producto || "")}</strong>
+
+          ${
+            sale.talle
+              ? `<small>Talle: ${escapeHTML(sale.talle)}</small>`
+              : ""
+          }
+        </td>
+
+        <td>${escapeHTML(sale.categoria || "")}</td>
+
+        <td>${sale.cantidad || 1}</td>
+
+        <td>${escapeHTML(sale.moneda || "")}</td>
+
+        <td>${fmtMonto(sale.moneda, sale.monto)}</td>
+
+        <td>${escapeHTML(sale.metodo || "")}</td>
+
+        <td>${escapeHTML(sale.vendedor || "")}</td>
+      </tr>
+    `).join("");
+
+  } catch (err) {
+    console.error(err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="table-empty">
+          Ocurrió un error al cargar el historial.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+// ==============================
+// HELPERS
+// ==============================
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.textContent = value;
+  }
 }
 
 function escapeHTML(value) {
@@ -53,1207 +687,2175 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
-function showToast(msg, type = "ok") {
-  const toast = document.getElementById("toast");
-
-  if (!toast) return;
-
-  toast.textContent = msg;
-  toast.className = "toast " + type + " show";
-
-  setTimeout(() => {
-    toast.className = "toast";
-  }, 3000);
+function escapeJS(value) {
+  return String(value ?? "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'")
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "\\r");
 }
 
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach((screen) => {
-    screen.classList.remove("active");
-  });
+// ==============================
+// STOCK
+// ==============================
 
-  const screen = document.getElementById(id);
+async function loadStock() {
+  const container = document.getElementById("stock-list");
 
-  if (screen) {
-    screen.classList.add("active");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="loading-state">
+      Cargando stock...
+    </div>
+  `;
+
+  try {
+    const { data, error } = await sb
+      .from("stock")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error("Error cargando stock:", error);
+
+      container.innerHTML = `
+        <div class="empty-state">
+          No se pudo cargar el stock.
+        </div>
+      `;
+
+      return;
+    }
+
+    stockData = data || [];
+
+    // Cargar talles de todos los productos
+    if (stockData.length > 0) {
+      const { data: talles, error: tallesError } = await sb
+        .from("producto_talles")
+        .select("id, producto_id, talle, cantidad")
+        .in(
+          "producto_id",
+          stockData.map(producto => producto.id)
+        )
+        .order("id", { ascending: true });
+
+      if (tallesError) {
+        console.warn("No se pudieron cargar los talles:", tallesError);
+      }
+
+      stockData = stockData.map(producto => ({
+        ...producto,
+        talles: (talles || []).filter(
+          talle => Number(talle.producto_id) === Number(producto.id)
+        )
+      }));
+    }
+
+    renderStock(stockData);
+
+  } catch (err) {
+    console.error("Error inesperado cargando stock:", err);
+
+    container.innerHTML = `
+      <div class="empty-state">
+        Ocurrió un error al cargar el stock.
+      </div>
+    `;
   }
 }
 
-// ══════════════════════════════════════════════
-// LOGIN / LOGOUT
-// ══════════════════════════════════════════════
+function renderStock(data = stockData) {
+  const container = document.getElementById("stock-list");
 
-const passInput = document.getElementById("inp-pass");
+  if (!container) return;
 
-if (passInput) {
-  passInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      doLogin();
-    }
-  });
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        No hay productos cargados en el stock.
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML = data
+    .map(producto => stockCardHTML(producto))
+    .join("");
 }
 
-function togglePass(inputId, btn) {
-  const input = document.getElementById(inputId);
+function stockCardHTML(producto) {
+  const talles = Array.isArray(producto.talles)
+    ? producto.talles
+    : [];
+
+  const cantidadTotal = Number(producto.cantidad || 0);
+
+  const imagen = producto.imagen_url
+    ? producto.imagen_url
+    : "";
+
+  const tallesHTML = talles.length
+    ? `
+      <div class="stock-card-talles">
+        ${talles.map(talle => `
+          <span class="stock-card-talle">
+            <strong>${escapeHTML(talle.talle)}</strong>
+            <span>${Number(talle.cantidad || 0)}</span>
+          </span>
+        `).join("")}
+      </div>
+    `
+    : "";
+
+  return `
+    <article
+      class="stock-card"
+      data-producto-id="${producto.id}"
+      data-nombre="${escapeHTML((producto.nombre || "").toLowerCase())}"
+      data-categoria="${escapeHTML(producto.categoria || "")}"
+    >
+
+      <div class="stock-card-image">
+        ${
+          imagen
+            ? `
+              <img
+                src="${escapeHTML(imagen)}"
+                alt="${escapeHTML(producto.nombre || "Producto")}"
+              />
+            `
+            : `
+              <div class="stock-card-no-image">
+                Sin imagen
+              </div>
+            `
+        }
+      </div>
+
+      <div class="stock-card-body">
+
+        <div class="stock-card-top">
+          <div>
+            <span class="stock-card-category">
+              ${escapeHTML(producto.categoria || "")}
+            </span>
+
+            <h3>
+              ${escapeHTML(producto.nombre || "Sin nombre")}
+            </h3>
+          </div>
+
+          <div class="stock-card-total">
+            <strong>${cantidadTotal}</strong>
+            <span>stock</span>
+          </div>
+        </div>
+
+        ${tallesHTML}
+
+        <div class="stock-card-actions">
+
+          <button
+            type="button"
+            class="btn-outline"
+            onclick="editarStockManual(${producto.id})"
+          >
+            Editar stock
+          </button>
+
+          <button
+            type="button"
+            class="btn-danger-sm"
+            onclick="eliminarProductoStock(${producto.id}, '${escapeJS(producto.nombre || "")}')"
+          >
+            Eliminar
+          </button>
+
+        </div>
+
+      </div>
+    </article>
+  `;
+}
+
+function filtrarStock() {
+  const input = document.getElementById("stock-search");
 
   if (!input) return;
 
-  const svgs = btn ? btn.querySelectorAll("svg") : [];
+  const texto = input.value.trim().toLowerCase();
 
-  if (input.type === "password") {
-    input.type = "text";
+  if (!texto) {
+    renderStock(stockData);
+    return;
+  }
 
-    if (svgs[0]) svgs[0].style.display = "none";
-    if (svgs[1]) svgs[1].style.display = "block";
-  } else {
-    input.type = "password";
+  const filtrados = stockData.filter(producto => {
+    const nombre = String(producto.nombre || "").toLowerCase();
+    const categoria = String(producto.categoria || "").toLowerCase();
 
-    if (svgs[0]) svgs[0].style.display = "block";
-    if (svgs[1]) svgs[1].style.display = "none";
+    return (
+      nombre.includes(texto) ||
+      categoria.includes(texto)
+    );
+  });
+
+  renderStock(filtrados);
+}
+
+// ==============================
+// FILAS DE TALLES
+// ==============================
+
+function agregarFilaTalle(talle = "", cantidad = 0) {
+  const lista = document.getElementById("stock-talles-list");
+
+  if (!lista) return;
+
+  const fila = document.createElement("div");
+
+  fila.className = "stock-talle-row";
+
+  fila.innerHTML = `
+    <input
+      type="text"
+      class="stock-talle-input"
+      placeholder="Talle (ej: 38, M, XL)"
+      value="${escapeHTML(talle)}"
+    />
+
+    <input
+      type="number"
+      class="stock-talle-cantidad"
+      min="0"
+      step="1"
+      value="${Number(cantidad || 0)}"
+      placeholder="Cantidad"
+    />
+
+    <button
+      type="button"
+      class="stock-talle-remove"
+      onclick="eliminarFilaTalle(this)"
+      title="Eliminar talle"
+    >
+      ×
+    </button>
+  `;
+
+  lista.appendChild(fila);
+}
+
+function eliminarFilaTalle(button) {
+  const fila = button?.closest(".stock-talle-row");
+
+  if (!fila) return;
+
+  const lista = document.getElementById("stock-talles-list");
+
+  if (!lista) return;
+
+  const filas = lista.querySelectorAll(".stock-talle-row");
+
+  // Dejamos siempre al menos una fila
+  if (filas.length <= 1) {
+    const inputTalle = fila.querySelector(".stock-talle-input");
+    const inputCantidad = fila.querySelector(".stock-talle-cantidad");
+
+    if (inputTalle) inputTalle.value = "";
+    if (inputCantidad) inputCantidad.value = "0";
+
+    return;
+  }
+
+  fila.remove();
+}
+
+function obtenerTallesFormulario() {
+  const filas = document.querySelectorAll(
+    "#stock-talles-list .stock-talle-row"
+  );
+
+  const talles = [];
+
+  filas.forEach(fila => {
+    const talleInput = fila.querySelector(".stock-talle-input");
+    const cantidadInput = fila.querySelector(".stock-talle-cantidad");
+
+    const talle = (talleInput?.value || "").trim();
+    const cantidad = Number(cantidadInput?.value || 0);
+
+    // Ignoramos filas completamente vacías
+    if (!talle && cantidad === 0) {
+      return;
+    }
+
+    if (!talle) {
+      throw new Error("Hay un talle sin nombre.");
+    }
+
+    if (!Number.isInteger(cantidad) || cantidad < 0) {
+      throw new Error(
+        `La cantidad del talle ${talle} no es válida.`
+      );
+    }
+
+    talles.push({
+      talle,
+      cantidad
+    });
+  });
+
+  return talles;
+}
+
+// ==============================
+// AGREGAR PRODUCTO AL STOCK
+// ==============================
+
+async function agregarProductoStock() {
+  const nombreInput = document.getElementById("stock-nombre");
+  const categoriaInput = document.getElementById("stock-categoria");
+  const imagenInput = document.getElementById("stock-imagen");
+  const error = document.getElementById("stock-err");
+
+  const nombre = (nombreInput?.value || "").trim();
+  const categoria = categoriaInput?.value || "Ropa";
+
+  if (error) {
+    error.textContent = "";
+  }
+
+  if (!nombre) {
+    if (error) {
+      error.textContent = "Ingresá el nombre del producto.";
+    }
+
+    return;
+  }
+
+  let talles;
+
+  try {
+    talles = obtenerTallesFormulario();
+  } catch (err) {
+    if (error) {
+      error.textContent = err.message;
+    }
+
+    return;
+  }
+
+  if (talles.length === 0) {
+    if (error) {
+      error.textContent =
+        "Agregá al menos un talle con su cantidad.";
+    }
+
+    return;
+  }
+
+  const totalCantidad = talles.reduce(
+    (total, item) => total + Number(item.cantidad || 0),
+    0
+  );
+
+  if (totalCantidad < 0) {
+    if (error) {
+      error.textContent = "La cantidad no puede ser negativa.";
+    }
+
+    return;
+  }
+
+  const button = document.querySelector(
+    ".stock-add-panel .btn-accent"
+  );
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Guardando...";
+  }
+
+  try {
+    // ==========================
+    // SUBIR IMAGEN SI EXISTE
+    // ==========================
+
+    let imagenURL = null;
+
+    const archivo = imagenInput?.files?.[0];
+
+    if (archivo) {
+      const extension =
+        archivo.name.split(".").pop()?.toLowerCase() || "jpg";
+
+      const nombreArchivo =
+        `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+
+      const { error: uploadError } = await sb.storage
+        .from("productos")
+        .upload(nombreArchivo, archivo, {
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error("Error subiendo imagen:", uploadError);
+
+        if (error) {
+          error.textContent =
+            "No se pudo subir la imagen.";
+        }
+
+        return;
+      }
+
+      const { data: publicData } = sb.storage
+        .from("productos")
+        .getPublicUrl(nombreArchivo);
+
+      imagenURL = publicData?.publicUrl || null;
+    }
+
+    // ==========================
+    // CREAR PRODUCTO
+    // ==========================
+
+    const { data: producto, error: productoError } = await sb
+      .from("stock")
+      .insert({
+        nombre,
+        categoria,
+        cantidad: totalCantidad,
+        imagen_url: imagenURL
+      })
+      .select()
+      .single();
+
+    if (productoError) {
+      console.error("Error creando producto:", productoError);
+
+      if (error) {
+        error.textContent =
+          "No se pudo guardar el producto.";
+      }
+
+      return;
+    }
+
+    // ==========================
+    // CREAR TALLES
+    // ==========================
+
+    const filasTalles = talles.map(item => ({
+      producto_id: producto.id,
+      talle: item.talle,
+      cantidad: item.cantidad
+    }));
+
+    const { error: tallesError } = await sb
+      .from("producto_talles")
+      .insert(filasTalles);
+
+    if (tallesError) {
+      console.error("Error creando talles:", tallesError);
+
+      // Si fallaron los talles, intentamos borrar
+      // el producto recién creado.
+      await sb
+        .from("stock")
+        .delete()
+        .eq("id", producto.id);
+
+      if (error) {
+        error.textContent =
+          "El producto se creó pero no se pudieron guardar los talles.";
+      }
+
+      return;
+    }
+
+    // ==========================
+    // LIMPIAR FORMULARIO
+    // ==========================
+
+    if (nombreInput) {
+      nombreInput.value = "";
+    }
+
+    if (imagenInput) {
+      imagenInput.value = "";
+    }
+
+    const listaTalles =
+      document.getElementById("stock-talles-list");
+
+    if (listaTalles) {
+      listaTalles.innerHTML = "";
+
+      agregarFilaTalle();
+    }
+
+    showToast("Producto agregado al stock.");
+
+    await loadStock();
+    await loadProductOptions();
+
+  } catch (err) {
+    console.error("Error agregando producto:", err);
+
+    if (error) {
+      error.textContent =
+        err.message || "Ocurrió un error al guardar.";
+    }
+
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Agregar producto";
+    }
   }
 }
 
-async function doLogin() {
-  const userInput = document.getElementById("inp-user");
-  const passwordInput = document.getElementById("inp-pass");
-  const errorText = document.getElementById("login-err");
-  const button = document.querySelector("#screen-login .btn-accent");
+// ==============================
+// EDITAR STOCK MANUAL
+// ==============================
 
-  if (!userInput || !passwordInput) return;
+async function editarStockManual(productoId) {
+  const producto = stockData.find(
+    item => Number(item.id) === Number(productoId)
+  );
 
-  const username = userInput.value.trim().toLowerCase();
-  const password = passwordInput.value;
-
-  if (errorText) {
-    errorText.textContent = "";
+  if (!producto) {
+    showToast("No se encontró el producto.", "error");
+    return;
   }
 
-  if (!username || !password) {
-    if (errorText) {
-      errorText.textContent = "Completá los campos.";
+  const tallesActuales = Array.isArray(producto.talles)
+    ? producto.talles
+    : [];
+
+  if (tallesActuales.length > 0) {
+    const nuevoValor = prompt(
+      `Stock total actual de "${producto.nombre}": ${producto.cantidad}\n\n` +
+      `Este producto tiene talles configurados.\n` +
+      `Para modificar el stock por talle, usá la edición de talles.`
+    );
+
+    if (nuevoValor === null) {
+      return;
     }
+
+    showToast(
+      "Este producto tiene talles. El stock se controla por cada talle.",
+      "error"
+    );
 
     return;
   }
 
-  if (button) {
-    button.textContent = "Entrando...";
-    button.disabled = true;
+  const actual = Number(producto.cantidad || 0);
+
+  const nuevoValor = prompt(
+    `Ingresá el nuevo stock para "${producto.nombre}":`,
+    actual
+  );
+
+  if (nuevoValor === null) {
+    return;
   }
 
-  const { data, error } = await sb
-    .from("usuarios")
-    .select("*")
-    .eq("usuario", username)
-    .eq("password", password)
-    .single();
+  const cantidad = Number(nuevoValor);
 
-  if (button) {
-    button.textContent = "Entrar";
-    button.disabled = false;
-  }
-
-  if (error || !data) {
-    if (errorText) {
-      errorText.textContent = "Usuario o contraseña incorrectos.";
-    }
+  if (!Number.isInteger(cantidad) || cantidad < 0) {
+    showToast(
+      "Ingresá una cantidad entera igual o mayor a 0.",
+      "error"
+    );
 
     return;
   }
 
-  currentUser = {
-    id: data.id,
-    usuario: data.usuario,
-    display: data.nombre,
-    rol: data.rol,
-  };
+  try {
+    const { error } = await sb
+      .from("stock")
+      .update({
+        cantidad
+      })
+      .eq("id", productoId);
 
-  const vendorChip = document.getElementById("vendor-chip");
+    if (error) {
+      console.error(error);
 
-  if (vendorChip) {
-    vendorChip.textContent = currentUser.display;
+      showToast(
+        "No se pudo actualizar el stock.",
+        "error"
+      );
+
+      return;
+    }
+
+    showToast("Stock actualizado.");
+
+    await loadStock();
+    await loadProductOptions();
+
+  } catch (err) {
+    console.error(err);
+
+    showToast(
+      "Ocurrió un error al actualizar el stock.",
+      "error"
+    );
+  }
+}
+
+// ==============================
+// ELIMINAR PRODUCTO
+// ==============================
+
+async function eliminarProductoStock(productoId, nombre) {
+  const confirmar = confirm(
+    `¿Seguro que querés eliminar "${nombre}" del stock?`
+  );
+
+  if (!confirmar) {
+    return;
   }
 
-  const sidebarUserName = document.getElementById("sidebar-user-name");
+  try {
+    // Primero eliminamos los talles asociados.
+    const { error: tallesError } = await sb
+      .from("producto_talles")
+      .delete()
+      .eq("producto_id", productoId);
 
-  if (sidebarUserName) {
-    sidebarUserName.textContent = currentUser.display;
+    if (tallesError) {
+      console.error(
+        "Error eliminando talles:",
+        tallesError
+      );
+
+      showToast(
+        "No se pudieron eliminar los talles.",
+        "error"
+      );
+
+      return;
+    }
+
+    const { error } = await sb
+      .from("stock")
+      .delete()
+      .eq("id", productoId);
+
+    if (error) {
+      console.error(error);
+
+      showToast(
+        "No se pudo eliminar el producto.",
+        "error"
+      );
+
+      return;
+    }
+
+    showToast("Producto eliminado.");
+
+    await loadStock();
+    await loadProductOptions();
+
+  } catch (err) {
+    console.error(err);
+
+    showToast(
+      "Ocurrió un error al eliminar el producto.",
+      "error"
+    );
+  }
+}
+
+// ==============================
+// SELECTOR DE PRODUCTOS PARA VENTA
+// ==============================
+
+async function loadProductOptions() {
+  try {
+    const { data, error } = await sb
+      .from("stock")
+      .select("*")
+      .order("nombre", { ascending: true });
+
+    if (error) {
+      console.error("Error cargando productos:", error);
+      return;
+    }
+
+    productPickerData = data || [];
+
+    // Cargar talles de todos los productos
+    if (productPickerData.length > 0) {
+      const { data: talles, error: tallesError } = await sb
+        .from("producto_talles")
+        .select("id, producto_id, talle, cantidad")
+        .in(
+          "producto_id",
+          productPickerData.map(producto => producto.id)
+        )
+        .order("id", { ascending: true });
+
+      if (tallesError) {
+        console.warn(
+          "No se pudieron cargar los talles:",
+          tallesError
+        );
+      }
+
+      productPickerData = productPickerData.map(producto => ({
+        ...producto,
+        talles: (talles || []).filter(
+          talle =>
+            Number(talle.producto_id) === Number(producto.id)
+        )
+      }));
+    } else {
+      productPickerData = [];
+    }
+
+  } catch (err) {
+    console.error(
+      "Error inesperado cargando productos:",
+      err
+    );
+  }
+}
+
+async function openProductModal() {
+  const modal = document.getElementById("producto-modal");
+
+  if (!modal) return;
+
+  modal.setAttribute("aria-hidden", "false");
+  modal.classList.add("open");
+
+  const search = document.getElementById("producto-search");
+
+  if (search) {
+    search.value = "";
   }
 
-  const esAdmin = currentUser.rol === "admin";
+  productPickerFilter = "Todos";
 
-  const usuariosTab = document.getElementById("tab-btn-usuarios");
-  const usuariosMobileTab = document.getElementById("mob-tab-btn-usuarios");
+  document
+    .querySelectorAll(".producto-filter")
+    .forEach(button => {
+      button.classList.toggle(
+        "active",
+        button.dataset.filter === "Todos"
+      );
+    });
 
-  if (usuariosTab) {
-    usuariosTab.style.display = esAdmin ? "inline-block" : "none";
+  const grid = document.getElementById(
+    "producto-picker-grid"
+  );
+
+  if (grid) {
+    grid.innerHTML = `
+      <div class="producto-picker-loading">
+        Cargando productos...
+      </div>
+    `;
   }
-
-  if (usuariosMobileTab) {
-    usuariosMobileTab.style.display = esAdmin ? "inline-block" : "none";
-  }
-
-  showScreen("screen-app");
 
   await loadProductOptions();
-  await loadDashboard();
+
+  renderProductModal();
+
+  setTimeout(() => {
+    search?.focus();
+  }, 100);
 }
 
-function doLogout() {
-  currentUser = null;
+function closeProductModal() {
+  const modal = document.getElementById("producto-modal");
 
-  const userInput = document.getElementById("inp-user");
-  const passwordInput = document.getElementById("inp-pass");
+  if (!modal) return;
 
-  if (userInput) userInput.value = "";
-  if (passwordInput) passwordInput.value = "";
-
-  showScreen("screen-login");
+  modal.setAttribute("aria-hidden", "true");
+  modal.classList.remove("open");
 }
 
-// ══════════════════════════════════════════════
-// USUARIOS
-// ══════════════════════════════════════════════
+function setProductFilter(filter, button) {
+  productPickerFilter = filter;
 
-async function loadUsuarios() {
-  const grid = document.getElementById("users-grid");
+  document
+    .querySelectorAll(".producto-filter")
+    .forEach(item => {
+      item.classList.remove("active");
+    });
+
+  if (button) {
+    button.classList.add("active");
+  }
+
+  renderProductModal();
+}
+
+function renderProductModal() {
+  const grid = document.getElementById(
+    "producto-picker-grid"
+  );
+
+  const count = document.getElementById(
+    "producto-modal-count"
+  );
+
+  const searchInput = document.getElementById(
+    "producto-search"
+  );
 
   if (!grid) return;
 
-  grid.innerHTML = `
-    <div class="loader">
-      <div class="spinner"></div>
-      Cargando...
-    </div>
-  `;
+  const texto = (searchInput?.value || "")
+    .trim()
+    .toLowerCase();
 
-  const { data, error } = await sb
-    .from("usuarios")
-    .select("*")
-    .order("created_at");
+  let productos = [...productPickerData];
 
-  if (error) {
+  // Filtro por categoría
+  if (productPickerFilter !== "Todos") {
+    productos = productos.filter(
+      producto =>
+        String(producto.categoria || "") ===
+        productPickerFilter
+    );
+  }
+
+  // Filtro por búsqueda
+  if (texto) {
+    productos = productos.filter(producto => {
+      const nombre = String(
+        producto.nombre || ""
+      ).toLowerCase();
+
+      const categoria = String(
+        producto.categoria || ""
+      ).toLowerCase();
+
+      return (
+        nombre.includes(texto) ||
+        categoria.includes(texto)
+      );
+    });
+  }
+
+  if (count) {
+    count.textContent =
+      `${productos.length} producto${productos.length === 1 ? "" : "s"}`;
+  }
+
+  if (productos.length === 0) {
     grid.innerHTML = `
-      <p style="color:var(--red);padding:16px">
-        Error al cargar usuarios.
-      </p>
-    `;
-
-    console.error(error);
-    return;
-  }
-
-  if (!data || !data.length) {
-    grid.innerHTML = "<p>No hay usuarios cargados.</p>";
-    return;
-  }
-
-  grid.innerHTML = data
-    .map(
-      (user) => `
-    <div class="user-card">
-      <div class="user-info">
-        <span class="user-name">
-          ${escapeHTML(user.nombre)}
-        </span>
-
-        <span class="user-meta">
-          @${escapeHTML(user.usuario)}
-        </span>
-
-        <span
-          class="tag ${user.rol === "admin" ? "tag-admin" : "tag-vendedor"}"
-          style="margin-top:4px;width:fit-content"
-        >
-          ${escapeHTML(user.rol)}
+      <div class="producto-picker-empty">
+        <strong>No encontramos productos</strong>
+        <span>
+          Probá con otro nombre o cambiá el filtro.
         </span>
       </div>
-
-      ${
-        user.usuario !== "admin"
-          ? `
-            <button
-              class="btn-del-user"
-              onclick="deleteUsuario(${user.id}, '${escapeHTML(user.nombre)}')"
-              title="Eliminar"
-            >
-              ×
-            </button>
-          `
-          : ""
-      }
-    </div>
-  `,
-    )
-    .join("");
-}
-
-async function crearUsuario() {
-  const nombreInput = document.getElementById("u-nombre");
-  const usuarioInput = document.getElementById("u-usuario");
-  const passwordInput = document.getElementById("u-pass");
-  const rolInput = document.getElementById("u-rol");
-  const errorText = document.getElementById("u-err");
-  const button = document.getElementById("u-btn");
-
-  if (!nombreInput || !usuarioInput || !passwordInput || !rolInput) {
-    return;
-  }
-
-  const nombre = nombreInput.value.trim();
-  const usuario = usuarioInput.value.trim().toLowerCase();
-  const password = passwordInput.value;
-  const rol = rolInput.value;
-
-  if (errorText) {
-    errorText.textContent = "";
-  }
-
-  if (!nombre || !usuario || !password) {
-    if (errorText) {
-      errorText.textContent = "Completá todos los campos.";
-    }
-
-    return;
-  }
-
-  if (password.length < 4) {
-    if (errorText) {
-      errorText.textContent = "La contraseña debe tener al menos 4 caracteres.";
-    }
-
-    return;
-  }
-
-  if (button) {
-    button.textContent = "Creando...";
-    button.disabled = true;
-  }
-
-  const { error } = await sb.from("usuarios").insert([
-    {
-      nombre,
-      usuario,
-      password,
-      rol,
-    },
-  ]);
-
-  if (button) {
-    button.textContent = "Crear usuario";
-    button.disabled = false;
-  }
-
-  if (error) {
-    if (errorText) {
-      errorText.textContent =
-        error.code === "23505"
-          ? "Ese nombre de usuario ya existe."
-          : "Error al crear usuario.";
-    }
-
-    console.error(error);
-    return;
-  }
-
-  nombreInput.value = "";
-  usuarioInput.value = "";
-  passwordInput.value = "";
-
-  showToast("✓ Usuario creado", "ok");
-
-  await loadUsuarios();
-}
-
-async function deleteUsuario(id, nombre) {
-  if (!confirm(`¿Eliminar al usuario "${nombre}"?`)) {
-    return;
-  }
-
-  const { error } = await sb.from("usuarios").delete().eq("id", id);
-
-  if (error) {
-    showToast("No se pudo eliminar el usuario", "fail");
-    console.error(error);
-    return;
-  }
-
-  showToast("Usuario eliminado", "ok");
-
-  await loadUsuarios();
-}
-
-// ══════════════════════════════════════════════
-// NAVEGACIÓN
-// ══════════════════════════════════════════════
-
-function goTab(tab, btn) {
-  document.querySelectorAll(".nav-tab").forEach((tabButton) => {
-    tabButton.classList.remove("active");
-  });
-
-  if (tab === 'cubitos') loadCubitos();
-  
-  if (btn) {
-    btn.classList.add("active");
-  }
-
-  document.querySelectorAll(".tab-content").forEach((content) => {
-    content.classList.remove("active");
-  });
-
-  const selectedTab = document.getElementById("tab-" + tab);
-
-  if (selectedTab) {
-    selectedTab.classList.add("active");
-  }
-
-  if (tab === "dashboard") loadDashboard();
-  if (tab === "stock") loadStock();
-  if (tab === "historial") loadHistorial();
-  if (tab === "usuarios") loadUsuarios();
-}
-
-// ══════════════════════════════════════════════
-// DASHBOARD
-// ══════════════════════════════════════════════
-
-async function loadDashboard() {
-  const tbody = document.getElementById("today-tbody");
-
-  if (!tbody) return;
-
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="7" class="empty">
-        <div class="loader">
-          <div class="spinner"></div>
-          Cargando...
-        </div>
-      </td>
-    </tr>
-  `;
-
-  const { data, error } = await sb
-    .from("ventas")
-    .select("*")
-    .eq("fecha", todayStr())
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    showToast("Error al cargar datos", "fail");
-    console.error(error);
-    return;
-  }
-
-  const ventas = data || [];
-
-  const totalARS = ventas
-    .filter((sale) => sale.moneda === "ARS")
-    .reduce((total, sale) => total + Number(sale.monto), 0);
-
-  const totalUSD = ventas
-    .filter((sale) => sale.moneda === "USD")
-    .reduce((total, sale) => total + Number(sale.monto), 0);
-
-  const ropa = ventas.filter((sale) => sale.categoria === "Ropa").length;
-
-  const accesorios = ventas.filter(
-    (sale) => sale.categoria === "Accesorios",
-  ).length;
-
-  const metrics = document.getElementById("metrics");
-
-  if (metrics) {
-    // Traer acumulado histórico
-    const { data: historial } = await sb.from("ventas").select("moneda, monto");
-
-    const acumARS = (historial || [])
-      .filter((v) => v.moneda === "ARS")
-      .reduce((a, b) => a + Number(b.monto), 0);
-
-    const acumUSD = (historial || [])
-      .filter((v) => v.moneda === "USD")
-      .reduce((a, b) => a + Number(b.monto), 0);
-
-    const acumBRL = (historial || [])
-      .filter((v) => v.moneda === "BRL")
-      .reduce((a, b) => a + Number(b.monto), 0);
-
-    metrics.innerHTML = `
-  <div class="metric-card">
-    <div class="metric-label">Ventas hoy</div>
-    <div class="metric-val">${ventas.length}</div>
-    <div class="metric-sub">total del día</div>
-  </div>
-
-  <div class="metric-card">
-    <div class="metric-label">Ingresos ARS hoy</div>
-    <div class="metric-val">$${totalARS.toLocaleString("es-AR")}</div>
-    <div class="metric-sub">pesos argentinos</div>
-  </div>
-
-  <div class="metric-card">
-    <div class="metric-label">Ingresos USD hoy</div>
-    <div class="metric-val">U$D ${totalUSD.toFixed(2)}</div>
-    <div class="metric-sub">dólares</div>
-  </div>
-
-  <div class="metric-card">
-    <div class="metric-label">Ropa / Accesorios</div>
-    <div class="metric-val">${ropa} / ${accesorios}</div>
-    <div class="metric-sub">por categoría</div>
-  </div>
-
-  <div class="metric-card">
-    <div class="metric-label">Acumulado total ARS</div>
-    <div class="metric-val">$${acumARS.toLocaleString("es-AR")}</div>
-    <div class="metric-sub">todos los tiempos</div>
-  </div>
-
-  <div class="metric-card">
-    <div class="metric-label">Acumulado total USD</div>
-    <div class="metric-val">U$D ${acumUSD.toFixed(2)}</div>
-    <div class="metric-sub">todos los tiempos</div>
-  </div>
-
-  <div class="metric-card">
-    <div class="metric-label">Acumulado total BRL</div>
-    <div class="metric-val">R$ ${acumBRL.toFixed(2)}</div>
-    <div class="metric-sub">todos los tiempos</div>
-  </div>
-`;
-  }
-
-  if (!ventas.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty">
-          Sin ventas cargadas hoy.
-        </td>
-      </tr>
     `;
 
     return;
   }
 
-  tbody.innerHTML = ventas
-    .map(
-      (sale) => `
-    <tr>
-      <td>${escapeHTML(sale.hora)}</td>
+  grid.innerHTML = productos
+    .map(producto => {
+      const talles = Array.isArray(producto.talles)
+        ? producto.talles
+        : [];
 
-      <td>
-        ${escapeHTML(sale.producto)}
+      const stockTotal = Number(
+        producto.cantidad || 0
+      );
 
-        ${sale.cantidad ? `<br><small>Cantidad: ${sale.cantidad}</small>` : ""}
+      const tieneTalles = talles.length > 0;
 
-        ${
-          sale.nota
-            ? `
-              <br>
-              <span style="font-size:11px;color:var(--text3)">
-                ${escapeHTML(sale.nota)}
-              </span>
-            `
-            : ""
-        }
-      </td>
+      const hayStock = tieneTalles
+        ? talles.some(
+            talle => Number(talle.cantidad || 0) > 0
+          )
+        : stockTotal > 0;
 
-      <td>
-        <span class="tag ${
-          sale.categoria === "Ropa" ? "tag-ropa" : "tag-accs"
-        }">
-          ${escapeHTML(sale.categoria)}
-        </span>
-      </td>
+      const imagen = producto.imagen_url || "";
 
-      <td>
-        <span class="tag tag-${String(sale.moneda).toLowerCase()}">
-          ${escapeHTML(sale.moneda)}
-        </span>
-      </td>
+      const tallesTexto = tieneTalles
+        ? talles
+            .map(
+              talle =>
+                `${escapeHTML(talle.talle)}: ${Number(
+                  talle.cantidad || 0
+                )}`
+            )
+            .join(" · ")
+        : `Stock: ${stockTotal}`;
 
-      <td style="font-weight:500">
-        ${fmtMonto(sale.moneda, sale.monto)}
-      </td>
+      return `
+        <button
+          type="button"
+          class="producto-picker-card ${!hayStock ? "sin-stock" : ""}"
+          onclick="seleccionarProductoVenta(${producto.id})"
+          ${!hayStock ? "disabled" : ""}
+        >
 
-      <td style="color:var(--text2)">
-        ${escapeHTML(sale.metodo)}
-      </td>
+          <div class="producto-picker-image">
+            ${
+              imagen
+                ? `
+                  <img
+                    src="${escapeHTML(imagen)}"
+                    alt="${escapeHTML(
+                      producto.nombre || "Producto"
+                    )}"
+                  />
+                `
+                : `
+                  <div class="producto-picker-no-image">
+                    Sin imagen
+                  </div>
+                `
+            }
+          </div>
 
-      <td style="color:var(--text2)">
-        ${escapeHTML(sale.vendedor)}
-      </td>
-    </tr>
-  `,
-    )
+          <div class="producto-picker-info">
+
+            <div class="producto-picker-name">
+              ${escapeHTML(
+                producto.nombre || "Sin nombre"
+              )}
+            </div>
+
+            <div class="producto-picker-details">
+              ${escapeHTML(
+                producto.categoria || ""
+              )}
+            </div>
+
+            <div class="producto-picker-stock">
+              ${
+                hayStock
+                  ? tallesTexto
+                  : "Sin stock"
+              }
+            </div>
+
+          </div>
+
+        </button>
+      `;
+    })
     .join("");
 }
 
-// ══════════════════════════════════════════════
+async function seleccionarProductoVenta(productoId) {
+  const producto = productPickerData.find(
+    item => Number(item.id) === Number(productoId)
+  );
+
+  if (!producto) {
+    showToast(
+      "No se encontró el producto.",
+      "error"
+    );
+
+    return;
+  }
+
+  const talles = Array.isArray(producto.talles)
+    ? producto.talles
+    : [];
+
+  const stockTotal = Number(
+    producto.cantidad || 0
+  );
+
+  const tieneStock = talles.length > 0
+    ? talles.some(
+        talle => Number(talle.cantidad || 0) > 0
+      )
+    : stockTotal > 0;
+
+  if (!tieneStock) {
+    showToast(
+      "Ese producto no tiene stock disponible.",
+      "error"
+    );
+
+    return;
+  }
+
+  selectedVentaProducto = producto;
+
+  const hiddenInput =
+    document.getElementById("v-prod");
+
+  if (hiddenInput) {
+    hiddenInput.value = producto.id;
+  }
+
+  const selector =
+    document.getElementById(
+      "venta-producto-selector"
+    );
+
+  const selected =
+    document.getElementById(
+      "venta-producto-selected"
+    );
+
+  const selectedImage =
+    document.getElementById(
+      "venta-producto-selected-img"
+    );
+
+  const selectedName =
+    document.getElementById(
+      "venta-producto-selected-name"
+    );
+
+  const selectedDetails =
+    document.getElementById(
+      "venta-producto-selected-details"
+    );
+
+  if (selector) {
+    selector.style.display = "none";
+  }
+
+  if (selected) {
+    selected.style.display = "flex";
+  }
+
+  if (selectedImage) {
+    if (producto.imagen_url) {
+      selectedImage.src = producto.imagen_url;
+      selectedImage.alt = producto.nombre || "Producto";
+      selectedImage.style.display = "block";
+    } else {
+      selectedImage.removeAttribute("src");
+      selectedImage.style.display = "none";
+    }
+  }
+
+  if (selectedName) {
+    selectedName.textContent =
+      producto.nombre || "Producto";
+  }
+
+  if (selectedDetails) {
+    selectedDetails.textContent =
+      tieneTalles
+        ? "Seleccioná un talle"
+        : `Stock disponible: ${stockTotal}`;
+  }
+
+  closeProductModal();
+
+  // Resetear cantidad
+  const cantidadInput =
+    document.getElementById("v-cantidad");
+
+  if (cantidadInput) {
+    cantidadInput.value = "1";
+  }
+
+  // Manejar talles
+  await cargarTallesVenta(producto);
+
+  actualizarStockTalleVenta();
+}
+
+function cambiarProductoVenta() {
+  selectedVentaProducto = null;
+
+  const hiddenInput =
+    document.getElementById("v-prod");
+
+  if (hiddenInput) {
+    hiddenInput.value = "";
+  }
+
+  const selector =
+    document.getElementById(
+      "venta-producto-selector"
+    );
+
+  const selected =
+    document.getElementById(
+      "venta-producto-selected"
+    );
+
+  if (selector) {
+    selector.style.display = "flex";
+  }
+
+  if (selected) {
+    selected.style.display = "none";
+  }
+
+  const talleField =
+    document.getElementById(
+      "venta-talle-field"
+    );
+
+  if (talleField) {
+    talleField.style.display = "none";
+  }
+
+  const talleSelect =
+    document.getElementById("v-talle");
+
+  if (talleSelect) {
+    talleSelect.innerHTML = `
+      <option value="">
+        Seleccioná un talle
+      </option>
+    `;
+  }
+
+  const stockInfo =
+    document.getElementById("v-stock-info");
+
+  if (stockInfo) {
+    stockInfo.textContent =
+      "Seleccioná un producto";
+  }
+
+  selectedVentaProducto = null;
+}
+
+async function cargarTallesVenta(producto) {
+  const talleField =
+    document.getElementById(
+      "venta-talle-field"
+    );
+
+  const talleSelect =
+    document.getElementById("v-talle");
+
+  if (!talleField || !talleSelect) {
+    return;
+  }
+
+  let talles = Array.isArray(producto?.talles)
+    ? producto.talles
+    : [];
+
+  // Si no vienen cargados, consultamos Supabase
+  if (
+    producto &&
+    talles.length === 0
+  ) {
+    const { data, error } = await sb
+      .from("producto_talles")
+      .select("id, talle, cantidad")
+      .eq("producto_id", producto.id)
+      .order("id", { ascending: true });
+
+    if (!error) {
+      talles = data || [];
+    }
+  }
+
+  if (talles.length === 0) {
+    talleField.style.display = "none";
+    talleSelect.innerHTML = `
+      <option value="">
+        Este producto no usa talles
+      </option>
+    `;
+
+    return;
+  }
+
+  talleField.style.display = "block";
+
+  const disponibles = talles.filter(
+    talle =>
+      Number(talle.cantidad || 0) > 0
+  );
+
+  if (disponibles.length === 0) {
+    talleSelect.innerHTML = `
+      <option value="">
+        Sin talles disponibles
+      </option>
+    `;
+
+    return;
+  }
+
+  talleSelect.innerHTML = `
+    <option value="">
+      Seleccioná un talle
+    </option>
+
+    ${disponibles
+      .map(
+        talle => `
+          <option
+            value="${escapeHTML(talle.talle)}"
+            data-stock="${Number(
+              talle.cantidad || 0
+            )}"
+          >
+            ${escapeHTML(talle.talle)}
+            — ${Number(talle.cantidad || 0)} disponibles
+          </option>
+        `
+      )
+      .join("")}
+  `;
+
+  talleSelect.onchange = () => {
+    actualizarStockTalleVenta();
+  };
+
+  actualizarStockTalleVenta();
+}
+
+function actualizarStockTalleVenta() {
+  const stockInfo =
+    document.getElementById("v-stock-info");
+
+  const talleInfo =
+    document.getElementById("v-talle-info");
+
+  const talleSelect =
+    document.getElementById("v-talle");
+
+  const cantidadInput =
+    document.getElementById("v-cantidad");
+
+  if (!selectedVentaProducto) {
+    if (stockInfo) {
+      stockInfo.textContent =
+        "Seleccioná un producto";
+    }
+
+    return;
+  }
+
+  const talles = Array.isArray(
+    selectedVentaProducto.talles
+  )
+    ? selectedVentaProducto.talles
+    : [];
+
+  if (talles.length === 0) {
+    const stock = Number(
+      selectedVentaProducto.cantidad || 0
+    );
+
+    if (stockInfo) {
+      stockInfo.textContent =
+        `Stock disponible: ${stock}`;
+    }
+
+    if (talleInfo) {
+      talleInfo.textContent = "";
+    }
+
+    if (cantidadInput) {
+      cantidadInput.max =
+        stock > 0 ? String(stock) : "1";
+    }
+
+    return;
+  }
+
+  const talleSeleccionado =
+    talleSelect?.value || "";
+
+  if (!talleSeleccionado) {
+    if (stockInfo) {
+      stockInfo.textContent =
+        "Seleccioná un talle";
+    }
+
+    if (talleInfo) {
+      talleInfo.textContent =
+        "El stock se controla por talle.";
+    }
+
+    if (cantidadInput) {
+      cantidadInput.removeAttribute("max");
+    }
+
+    return;
+  }
+
+  const talle = talles.find(
+    item =>
+      String(item.talle) ===
+      String(talleSeleccionado)
+  );
+
+  if (!talle) {
+    if (stockInfo) {
+      stockInfo.textContent =
+        "Talle no disponible";
+    }
+
+    return;
+  }
+
+  const stock = Number(
+    talle.cantidad || 0
+  );
+
+  if (stockInfo) {
+    stockInfo.textContent =
+      `Stock del talle ${talle.talle}: ${stock}`;
+  }
+
+  if (talleInfo) {
+    talleInfo.textContent =
+      `${stock} unidad${stock === 1 ? "" : "es"} disponibles`;
+  }
+
+  if (cantidadInput) {
+    cantidadInput.max =
+      stock > 0 ? String(stock) : "1";
+
+    const actual = Number(
+      cantidadInput.value || 1
+    );
+
+    if (actual > stock && stock > 0) {
+      cantidadInput.value = String(stock);
+    }
+  }
+}
+
+// Buscar productos en tiempo real
+document.addEventListener("input", event => {
+  if (
+    event.target &&
+    event.target.id === "producto-search"
+  ) {
+    renderProductModal();
+  }
+});
+
+// ==============================
 // REGISTRAR VENTA
-// ══════════════════════════════════════════════
+// ==============================
 
 async function submitVenta() {
-  const productInput = document.getElementById("v-prod");
-  const quantityInput = document.getElementById("v-cantidad");
-  const currencyInput = document.getElementById("v-cur");
-  const amountInput = document.getElementById("v-amt");
-  const methodInput = document.getElementById("v-met");
-  const noteInput = document.getElementById("v-nota");
-  const errorText = document.getElementById("v-err");
-  const button = document.getElementById("v-btn");
+  const productoInput =
+    document.getElementById("v-prod");
+
+  const cantidadInput =
+    document.getElementById("v-cantidad");
+
+  const monedaInput =
+    document.getElementById("v-cur");
+
+  const montoInput =
+    document.getElementById("v-amt");
+
+  const metodoInput =
+    document.getElementById("v-met");
+
+  const notaInput =
+    document.getElementById("v-nota");
+
+  const talleInput =
+    document.getElementById("v-talle");
+
+  const error =
+    document.getElementById("v-err");
+
+  const button =
+    document.getElementById("v-btn");
+
+  if (error) {
+    error.textContent = "";
+  }
+
+  const productoId = Number(
+    productoInput?.value || 0
+  );
+
+  const cantidad = Number(
+    cantidadInput?.value || 0
+  );
+
+  const moneda =
+    monedaInput?.value || "ARS";
+
+  const monto = Number(
+    montoInput?.value || 0
+  );
+
+  const metodo =
+    metodoInput?.value || "";
+
+  const nota =
+    (notaInput?.value || "").trim();
+
+  const talle =
+    (talleInput?.value || "").trim();
+
+  // ==========================
+  // VALIDACIONES
+  // ==========================
+
+  if (!productoId) {
+    if (error) {
+      error.textContent =
+        "Seleccioná un producto.";
+    }
+
+    return;
+  }
 
   if (
-    !productInput ||
-    !quantityInput ||
-    !currencyInput ||
-    !amountInput ||
-    !methodInput ||
-    !noteInput
+    !Number.isInteger(cantidad) ||
+    cantidad <= 0
   ) {
-    return;
-  }
-
-  const productId = productInput.value;
-  const cantidad = parseInt(quantityInput.value, 10);
-  const moneda = currencyInput.value;
-  const monto = parseFloat(amountInput.value);
-  const metodo = methodInput.value;
-  const nota = noteInput.value.trim();
-
-  if (errorText) {
-    errorText.textContent = "";
-  }
-
-  if (!productId) {
-    if (errorText) errorText.textContent = "Seleccioná un producto.";
-    return;
-  }
-
-  if (!Number.isInteger(cantidad) || cantidad <= 0) {
-    if (errorText) {
-      errorText.textContent = "Ingresá una cantidad válida.";
+    if (error) {
+      error.textContent =
+        "La cantidad debe ser un número entero mayor a 0.";
     }
 
     return;
   }
 
   if (!Number.isFinite(monto) || monto <= 0) {
-    if (errorText) {
-      errorText.textContent = "Ingresá un monto válido.";
+    if (error) {
+      error.textContent =
+        "Ingresá un monto válido.";
     }
 
     return;
   }
 
-  const { data: producto, error: stockError } = await sb
-    .from("stock")
-    .select("*")
-    .eq("id", productId)
-    .single();
-
-  if (stockError || !producto) {
-    if (errorText) {
-      errorText.textContent = "No se pudo encontrar el producto.";
-    }
-
-    return;
-  }
-
-  if (Number(producto.cantidad) < cantidad) {
-    if (errorText) {
-      errorText.textContent = `Stock insuficiente. Disponible: ${producto.cantidad}.`;
+  if (!metodo) {
+    if (error) {
+      error.textContent =
+        "Seleccioná un método de pago.";
     }
 
     return;
   }
 
   if (button) {
-    button.textContent = "Guardando...";
     button.disabled = true;
+    button.textContent = "Registrando...";
   }
 
-  const { error: ventaError } = await sb.from("ventas").insert([
-    {
+  try {
+    // ==========================
+    // BUSCAR PRODUCTO
+    // ==========================
+
+    const { data: producto, error: productoError } =
+      await sb
+        .from("stock")
+        .select("*")
+        .eq("id", productoId)
+        .single();
+
+    if (productoError || !producto) {
+      console.error(productoError);
+
+      if (error) {
+        error.textContent =
+          "No se encontró el producto.";
+      }
+
+      return;
+    }
+
+    // ==========================
+    // BUSCAR TALLES
+    // ==========================
+
+    const { data: tallesActuales, error: tallesError } =
+      await sb
+        .from("producto_talles")
+        .select("id, talle, cantidad")
+        .eq("producto_id", productoId)
+        .order("id", { ascending: true });
+
+    if (tallesError) {
+      console.error(tallesError);
+
+      if (error) {
+        error.textContent =
+          "No se pudo consultar el stock por talle.";
+      }
+
+      return;
+    }
+
+    const tieneTalles =
+      (tallesActuales || []).length > 0;
+
+    let stockAnterior = Number(
+      producto.cantidad || 0
+    );
+
+    let talleAnterior = null;
+    let talleSeleccionado = null;
+
+    // ==========================
+    // PRODUCTO CON TALLES
+    // ==========================
+
+    if (tieneTalles) {
+      if (!talle) {
+        if (error) {
+          error.textContent =
+            "Seleccioná un talle.";
+        }
+
+        return;
+      }
+
+      const talleEncontrado =
+        tallesActuales.find(
+          item =>
+            String(item.talle) ===
+            String(talle)
+        );
+
+      if (!talleEncontrado) {
+        if (error) {
+          error.textContent =
+            "El talle seleccionado no existe.";
+        }
+
+        return;
+      }
+
+      const stockTalle = Number(
+        talleEncontrado.cantidad || 0
+      );
+
+      if (stockTalle < cantidad) {
+        if (error) {
+          error.textContent =
+            `No hay suficiente stock del talle ${talle}. Disponible: ${stockTalle}.`;
+        }
+
+        return;
+      }
+
+      talleSeleccionado =
+        talleEncontrado.talle;
+
+      talleAnterior = stockTalle;
+
+      // ==========================
+      // DESCONTAR TALLE
+      // ==========================
+
+      const { data: descuentoOK, error: rpcError } =
+        await sb.rpc(
+          "descontar_stock_talle",
+          {
+            p_producto_id: productoId,
+            p_talle: talleSeleccionado,
+            p_cantidad: cantidad
+          }
+        );
+
+      if (rpcError) {
+        console.error(
+          "Error RPC descuento:",
+          rpcError
+        );
+
+        if (error) {
+          error.textContent =
+            "No se pudo descontar el stock.";
+        }
+
+        return;
+      }
+
+      if (descuentoOK !== true) {
+        if (error) {
+          error.textContent =
+            "El stock cambió antes de registrar la venta. Revisá la cantidad disponible.";
+        }
+
+        return;
+      }
+
+      // ==========================
+      // RECALCULAR STOCK TOTAL
+      // ==========================
+
+      const { data: tallesDespues, error: recargaError } =
+        await sb
+          .from("producto_talles")
+          .select("cantidad")
+          .eq("producto_id", productoId);
+
+      if (recargaError) {
+        console.error(recargaError);
+
+        // Intentamos restaurar el talle
+        await sb
+          .from("producto_talles")
+          .update({
+            cantidad: talleAnterior
+          })
+          .eq("producto_id", productoId)
+          .eq("talle", talleSeleccionado);
+
+        if (error) {
+          error.textContent =
+            "No se pudo actualizar el stock total.";
+        }
+
+        return;
+      }
+
+      const nuevoStockTotal =
+        (tallesDespues || []).reduce(
+          (total, item) =>
+            total + Number(item.cantidad || 0),
+          0
+        );
+
+      // ==========================
+      // ACTUALIZAR STOCK TOTAL
+      // ==========================
+
+      const { error: stockError } =
+        await sb
+          .from("stock")
+          .update({
+            cantidad: nuevoStockTotal
+          })
+          .eq("id", productoId);
+
+      if (stockError) {
+        console.error(stockError);
+
+        // Restaurar talle
+        await sb
+          .from("producto_talles")
+          .update({
+            cantidad: talleAnterior
+          })
+          .eq("producto_id", productoId)
+          .eq("talle", talleSeleccionado);
+
+        if (error) {
+          error.textContent =
+            "No se pudo actualizar el stock.";
+        }
+
+        return;
+      }
+
+      // ==========================
+      // REGISTRAR VENTA
+      // ==========================
+
+      const venta = {
+        fecha: todayStr(),
+        hora: nowTime(),
+        producto: producto.nombre,
+        categoria: producto.categoria,
+        moneda,
+        monto,
+        metodo,
+        nota: nota || null,
+        vendedor:
+          currentUser?.display ||
+          currentUser?.usuario ||
+          "Sistema",
+        producto_id: productoId,
+        cantidad,
+        talle: talleSeleccionado
+      };
+
+      const { error: ventaError } =
+        await sb
+          .from("ventas")
+          .insert(venta);
+
+      if (ventaError) {
+        console.error(
+          "Error registrando venta:",
+          ventaError
+        );
+
+        // Restaurar talle
+        await sb
+          .from("producto_talles")
+          .update({
+            cantidad: talleAnterior
+          })
+          .eq("producto_id", productoId)
+          .eq("talle", talleSeleccionado);
+
+        // Restaurar stock total
+        await sb
+          .from("stock")
+          .update({
+            cantidad: stockAnterior
+          })
+          .eq("id", productoId);
+
+        if (error) {
+          error.textContent =
+            "No se pudo registrar la venta.";
+        }
+
+        return;
+      }
+
+      await ventaRegistradaCorrectamente();
+
+      return;
+    }
+
+    // ==========================
+    // PRODUCTO SIN TALLES
+    // ==========================
+
+    if (stockAnterior < cantidad) {
+      if (error) {
+        error.textContent =
+          `No hay suficiente stock. Disponible: ${stockAnterior}.`;
+      }
+
+      return;
+    }
+
+    const nuevoStock =
+      stockAnterior - cantidad;
+
+    // Actualizar stock primero
+    const { error: stockError } =
+      await sb
+        .from("stock")
+        .update({
+          cantidad: nuevoStock
+        })
+        .eq("id", productoId)
+        .gte("cantidad", cantidad);
+
+    if (stockError) {
+      console.error(stockError);
+
+      if (error) {
+        error.textContent =
+          "No se pudo actualizar el stock.";
+      }
+
+      return;
+    }
+
+    // Registrar venta
+    const venta = {
       fecha: todayStr(),
       hora: nowTime(),
-      producto_id: producto.id,
       producto: producto.nombre,
       categoria: producto.categoria,
-      cantidad,
       moneda,
       monto,
       metodo,
       nota: nota || null,
-      vendedor: currentUser ? currentUser.display : "Sin vendedor",
-    },
-  ]);
+      vendedor:
+        currentUser?.display ||
+        currentUser?.usuario ||
+        "Sistema",
+      producto_id: productoId,
+      cantidad,
+      talle: null
+    };
 
-  if (ventaError) {
+    const { error: ventaError } =
+      await sb
+        .from("ventas")
+        .insert(venta);
+
+    if (ventaError) {
+      console.error(
+        "Error registrando venta:",
+        ventaError
+      );
+
+      // Restaurar stock si la venta falló
+      await sb
+        .from("stock")
+        .update({
+          cantidad: stockAnterior
+        })
+        .eq("id", productoId);
+
+      if (error) {
+        error.textContent =
+          "No se pudo registrar la venta.";
+      }
+
+      return;
+    }
+
+    await ventaRegistradaCorrectamente();
+
+  } catch (err) {
+    console.error(
+      "Error inesperado registrando venta:",
+      err
+    );
+
+    if (error) {
+      error.textContent =
+        err.message ||
+        "Ocurrió un error al registrar la venta.";
+    }
+
+  } finally {
     if (button) {
-      button.textContent = "Registrar venta";
       button.disabled = false;
-    }
-
-    if (errorText) {
-      errorText.textContent = "Error al guardar la venta. Intentá de nuevo.";
-    }
-
-    console.error(ventaError);
-    return;
-  }
-
-  const { error: updateError } = await sb
-    .from("stock")
-    .update({
-      cantidad: Number(producto.cantidad) - cantidad,
-    })
-    .eq("id", producto.id);
-
-  if (updateError) {
-    if (button) {
       button.textContent = "Registrar venta";
-      button.disabled = false;
     }
+  }
+}
 
-    if (errorText) {
-      errorText.textContent =
-        "La venta se guardó, pero no se pudo actualizar el stock.";
-    }
+// ==============================
+// VENTA REGISTRADA CORRECTAMENTE
+// ==============================
 
-    console.error(updateError);
-    return;
+async function ventaRegistradaCorrectamente() {
+  showToast(
+    "Venta registrada correctamente."
+  );
+
+  // Limpiar selección
+  selectedVentaProducto = null;
+
+  const hiddenInput =
+    document.getElementById("v-prod");
+
+  if (hiddenInput) {
+    hiddenInput.value = "";
   }
 
-  if (button) {
-    button.textContent = "Registrar venta";
-    button.disabled = false;
+  const selector =
+    document.getElementById(
+      "venta-producto-selector"
+    );
+
+  const selected =
+    document.getElementById(
+      "venta-producto-selected"
+    );
+
+  if (selector) {
+    selector.style.display = "flex";
   }
 
-  productInput.value = "";
-  quantityInput.value = "1";
-  amountInput.value = "";
-  noteInput.value = "";
+  if (selected) {
+    selected.style.display = "none";
+  }
 
-  const stockInfo = document.getElementById("v-stock-info");
+  const talleField =
+    document.getElementById(
+      "venta-talle-field"
+    );
+
+  if (talleField) {
+    talleField.style.display = "none";
+  }
+
+  const talleSelect =
+    document.getElementById("v-talle");
+
+  if (talleSelect) {
+    talleSelect.innerHTML = `
+      <option value="">
+        Seleccioná un talle
+      </option>
+    `;
+  }
+
+  const cantidadInput =
+    document.getElementById("v-cantidad");
+
+  if (cantidadInput) {
+    cantidadInput.value = "1";
+  }
+
+  const montoInput =
+    document.getElementById("v-amt");
+
+  if (montoInput) {
+    montoInput.value = "";
+  }
+
+  const notaInput =
+    document.getElementById("v-nota");
+
+  if (notaInput) {
+    notaInput.value = "";
+  }
+
+  const stockInfo =
+    document.getElementById("v-stock-info");
 
   if (stockInfo) {
-    stockInfo.textContent = "Seleccioná un producto";
+    stockInfo.textContent =
+      "Seleccioná un producto";
   }
 
+  const talleInfo =
+    document.getElementById("v-talle-info");
+
+  if (talleInfo) {
+    talleInfo.textContent =
+      "Seleccioná un talle";
+  }
+
+  const error =
+    document.getElementById("v-err");
+
+  if (error) {
+    error.textContent = "";
+  }
+
+  // Recargar todo para mostrar el stock actualizado
   await loadProductOptions();
-
-  showToast("✓ Venta registrada y stock actualizado", "ok");
-
+  await loadStock();
   await loadDashboard();
 }
 
-// ══════════════════════════════════════════════
-// PRODUCTOS PARA REGISTRAR VENTA
-// ══════════════════════════════════════════════
-
-async function loadProductOptions() {
-  const select = document.getElementById("v-prod");
-
-  if (!select) return;
-
-  const { data, error } = await sb
-    .from("stock")
-    .select("*")
-    .order("categoria")
-    .order("nombre");
-
-  if (error) {
-    select.innerHTML = `
-      <option value="">Error al cargar productos</option>
-    `;
-
-    console.error(error);
-    return;
-  }
-
-  if (!data || !data.length) {
-    select.innerHTML = `
-      <option value="">No hay productos cargados</option>
-    `;
-
-    return;
-  }
-
-  select.innerHTML = `
-    <option value="">Seleccioná un producto</option>
-  `;
-
-  data.forEach((product) => {
-    const option = document.createElement("option");
-
-    option.value = product.id;
-    option.dataset.stock = product.cantidad;
-
-    option.textContent = `${product.nombre} — ${product.categoria} — stock: ${product.cantidad}`;
-
-    select.appendChild(option);
-  });
-
-  select.onchange = () => {
-    const selectedOption = select.options[select.selectedIndex];
-    const stockInfo = document.getElementById("v-stock-info");
-
-    if (!stockInfo) return;
-
-    if (selectedOption && selectedOption.value) {
-      stockInfo.textContent = `Stock disponible: ${selectedOption.dataset.stock}`;
-    } else {
-      stockInfo.textContent = "Seleccioná un producto";
-    }
-  };
-}
-
-// ══════════════════════════════════════════════
-// STOCK
-// ══════════════════════════════════════════════
-
-async function loadStock() {
-  const wrapper = document.getElementById("stock-cols");
-  if (!wrapper) return;
-
-  wrapper.innerHTML = `<div class="loader"><div class="spinner"></div> Cargando...</div>`;
-
-  const { data, error } = await sb
-    .from("stock")
-    .select("*")
-    .order("categoria")
-    .order("nombre");
-
-  if (error) {
-    wrapper.innerHTML = `<p style="color:var(--red);padding:16px">Error al cargar stock.</p>`;
-    console.error(error);
-    return;
-  }
-
-  const products = data || [];
-  const categories = ["Ropa", "Accesorios"];
-
-  wrapper.innerHTML = `
-    <div class="stock-search-wrap">
-      <input
-        class="stock-search"
-        id="stock-search"
-        type="text"
-        placeholder="🔍 Buscar producto..."
-        oninput="filterStock()"
-      >
-    </div>
-    ${categories
-      .map((category) => {
-        const items = products.filter((p) => p.categoria === category);
-        return `
-        <div class="stock-section" data-category="${category}">
-          <p class="stock-category-title">${category}</p>
-          <div class="stock-grid-cards" id="grid-${category}">
-            ${items.length ? items.map((p) => stockCardHTML(p)).join("") : '<p class="empty">Sin productos.</p>'}
-          </div>
-          <div class="add-row">
-            <input type="text" id="new-${category}" placeholder="Nuevo producto...">
-            <input type="number" id="qty-${category}" min="0" value="0" placeholder="Cantidad" style="max-width:90px">
-            <button class="btn-outline" onclick="addStock('${category}')">Agregar</button>
-          </div>
-        </div>
-      `;
-      })
-      .join("")}
-  `;
-
-  // guardar lista completa para el filtro
-  window._stockData = products;
-}
-
-function stockCardHTML(p) {
-  return `
-    <div class="stock-card ${Number(p.cantidad) <= 2 ? "low-stock" : ""}" data-name="${p.nombre.toLowerCase()}">
-      <div class="stock-card-name">${escapeHTML(p.nombre)}</div>
-      <div class="stock-card-qty ${Number(p.cantidad) <= 2 ? "low" : ""}">${p.cantidad}</div>
-      <div class="stock-card-controls">
-        <button class="btn-qty" onclick="changeStock(${p.id}, -1)">−</button>
-        <button class="btn-qty" onclick="changeStock(${p.id}, 1)">+</button>
-        <button class="btn-del" onclick="deleteStock(${p.id})" title="Eliminar">×</button>
-      </div>
-    </div>
-  `;
-}
-
-function filterStock() {
-  const query =
-    document.getElementById("stock-search")?.value.toLowerCase().trim() || "";
-  const products = window._stockData || [];
-  const categories = ["Ropa", "Accesorios"];
-
-  categories.forEach((category) => {
-    const grid = document.getElementById("grid-" + category);
-    if (!grid) return;
-
-    const filtered = products.filter(
-      (p) => p.categoria === category && p.nombre.toLowerCase().includes(query),
-    );
-
-    grid.innerHTML = filtered.length
-      ? filtered.map((p) => stockCardHTML(p)).join("")
-      : '<p class="empty">Sin resultados.</p>';
-  });
-}
-
-async function changeStock(id, delta) {
-  const { data, error } = await sb
-    .from("stock")
-    .select("cantidad")
-    .eq("id", id)
-    .single();
-
-  if (error || !data) {
-    showToast("No se pudo consultar el stock", "fail");
-    return;
-  }
-
-  const newQuantity = Math.max(0, Number(data.cantidad) + delta);
-
-  const { error: updateError } = await sb
-    .from("stock")
-    .update({
-      cantidad: newQuantity,
-    })
-    .eq("id", id);
-
-  if (updateError) {
-    showToast("No se pudo actualizar el stock", "fail");
-    console.error(updateError);
-    return;
-  }
-
-  await loadStock();
-  await loadProductOptions();
-}
-
-async function deleteStock(id) {
-  if (!confirm("¿Eliminar este producto del stock?")) {
-    return;
-  }
-
-  const { error } = await sb.from("stock").delete().eq("id", id);
-
-  if (error) {
-    showToast("No se pudo eliminar el producto", "fail");
-    console.error(error);
-    return;
-  }
-
-  await loadStock();
-  await loadProductOptions();
-
-  showToast("Producto eliminado", "ok");
-}
-
-async function addStock(category) {
-  const nameInput = document.getElementById("new-" + category);
-  const quantityInput = document.getElementById("qty-" + category);
-
-  if (!nameInput || !quantityInput) {
-    return;
-  }
-
-  const name = nameInput.value.trim();
-  const quantity = parseInt(quantityInput.value, 10);
-
-  if (!name) {
-    showToast("Ingresá el nombre del producto", "fail");
-    return;
-  }
-
-  if (!Number.isInteger(quantity) || quantity < 0) {
-    showToast("Ingresá una cantidad válida", "fail");
-    return;
-  }
-
-  const { error } = await sb.from("stock").insert([
-    {
-      nombre: name,
-      categoria: category,
-      cantidad: quantity,
-    },
-  ]);
-
-  if (error) {
-    showToast("No se pudo agregar el producto", "fail");
-    console.error(error);
-    return;
-  }
-
-  nameInput.value = "";
-  quantityInput.value = "0";
-
-  await loadStock();
-  await loadProductOptions();
-
-  showToast("Producto agregado correctamente", "ok");
-}
-
-// ══════════════════════════════════════════════
-// HISTORIAL
-// ══════════════════════════════════════════════
-
-async function loadHistorial() {
-  const tbody = document.getElementById("hist-tbody");
-
-  if (!tbody) return;
-
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="7" class="empty">
-        <div class="loader">
-          <div class="spinner"></div>
-          Cargando...
-        </div>
-      </td>
-    </tr>
-  `;
-
-  const vendorFilter = document.getElementById("f-vend")?.value || "";
-
-  const categoryFilter = document.getElementById("f-cat")?.value || "";
-
-  const currencyFilter = document.getElementById("f-cur")?.value || "";
-
-  let query = sb
-    .from("ventas")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (vendorFilter) {
-    query = query.eq("vendedor", vendorFilter);
-  }
-
-  if (categoryFilter) {
-    query = query.eq("categoria", categoryFilter);
-  }
-
-  if (currencyFilter) {
-    query = query.eq("moneda", currencyFilter);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    showToast("Error al cargar historial", "fail");
-    console.error(error);
-    return;
-  }
-
-  if (!data || !data.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty">
-          Sin ventas para mostrar.
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
-
-  tbody.innerHTML = data
-    .map(
-      (sale) => `
-    <tr>
-      <td style="font-size:12px;color:var(--text2)">
-        ${escapeHTML(sale.fecha)} ${escapeHTML(sale.hora)}
-      </td>
-
-      <td>
-        ${escapeHTML(sale.producto)}
-
-        ${sale.cantidad ? `<br><small>Cantidad: ${sale.cantidad}</small>` : ""}
-
-        ${
-          sale.nota
-            ? `
-              <br>
-              <span style="font-size:11px;color:var(--text3)">
-                ${escapeHTML(sale.nota)}
-              </span>
-            `
-            : ""
-        }
-      </td>
-
-      <td>
-        <span class="tag ${
-          sale.categoria === "Ropa" ? "tag-ropa" : "tag-accs"
-        }">
-          ${escapeHTML(sale.categoria)}
-        </span>
-      </td>
-
-      <td>
-        <span class="tag tag-${String(sale.moneda).toLowerCase()}">
-          ${escapeHTML(sale.moneda)}
-        </span>
-      </td>
-
-      <td style="font-weight:500">
-        ${fmtMonto(sale.moneda, sale.monto)}
-      </td>
-
-      <td style="color:var(--text2)">
-        ${escapeHTML(sale.metodo)}
-      </td>
-
-      <td style="color:var(--text2)">
-        ${escapeHTML(sale.vendedor)}
-      </td>
-    </tr>
-  `,
-    )
-    .join("");
-}
-
-// ══════════════════════════════════════════════
+// ==============================
 // INICIALIZACIÓN
-// ══════════════════════════════════════════════
+// ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
-  showScreen("screen-login");
+
+  // ============================
+  // BUSCADOR DE STOCK
+  // ============================
+
+  const stockSearch =
+    document.getElementById("stock-search");
+
+  if (stockSearch) {
+    stockSearch.addEventListener("input", () => {
+      filtrarStock();
+    });
+  }
+
+  // ============================
+  // SELECTOR DE PRODUCTO
+  // ============================
+
+  const productoSearch =
+    document.getElementById("producto-search");
+
+  if (productoSearch) {
+    productoSearch.addEventListener(
+      "input",
+      () => {
+        renderProductModal();
+      }
+    );
+  }
+
+  // ============================
+  // CAMBIO DE TALLE
+  // ============================
+
+  const talleSelect =
+    document.getElementById("v-talle");
+
+  if (talleSelect) {
+    talleSelect.addEventListener(
+      "change",
+      () => {
+        actualizarStockTalleVenta();
+      }
+    );
+  }
+
+  // ============================
+  // CAMBIO DE CANTIDAD
+  // ============================
+
+  const cantidadInput =
+    document.getElementById("v-cantidad");
+
+  if (cantidadInput) {
+    cantidadInput.addEventListener(
+      "input",
+      () => {
+        actualizarStockTalleVenta();
+      }
+    );
+  }
+
+  // ============================
+  // CERRAR MODAL CON ESC
+  // ============================
+
+  document.addEventListener(
+    "keydown",
+    event => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      const modal =
+        document.getElementById("producto-modal");
+
+      if (
+        modal &&
+        modal.classList.contains("open")
+      ) {
+        closeProductModal();
+      }
+    }
+  );
+
+  // ============================
+  // CREAR PRIMERA FILA DE TALLE
+  // ============================
+
+  const tallesList =
+    document.getElementById(
+      "stock-talles-list"
+    );
+
+  if (
+    tallesList &&
+    !tallesList.querySelector(
+      ".stock-talle-row"
+    )
+  ) {
+    agregarFilaTalle();
+  }
+
 });
 
+// ==============================
+// CARGA INICIAL DE DATOS
+// ==============================
 
-// ══════════════════════════════════════════════
-// CUBITOS
-// ══════════════════════════════════════════════
-
-async function loadCubitos() {
-  // Métricas
-  const metrics = document.getElementById('cubitos-metrics');
-  if (metrics) {
-    const [{ data: ventas }, { data: gastos }] = await Promise.all([
-      sb.from('cubitos_ventas').select('monto'),
-      sb.from('cubitos_gastos').select('monto')
-    ]);
-
-    const totalVentas = (ventas || []).reduce((a, b) => a + Number(b.monto), 0);
-    const totalGastos = (gastos || []).reduce((a, b) => a + Number(b.monto), 0);
-    const ganancia = totalVentas - totalGastos;
-
-    metrics.innerHTML = `
-      <div class="metric-card">
-        <div class="metric-label">Total ventas</div>
-        <div class="metric-val">$${totalVentas.toLocaleString('es-AR')}</div>
-        <div class="metric-sub">acumulado</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Total gastos</div>
-        <div class="metric-val" style="color:#f87171">$${totalGastos.toLocaleString('es-AR')}</div>
-        <div class="metric-sub">materia prima</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Ganancia neta</div>
-        <div class="metric-val" style="color:${ganancia >= 0 ? '#4ade80' : '#f87171'}">
-          $${ganancia.toLocaleString('es-AR')}
-        </div>
-        <div class="metric-sub">ventas − gastos</div>
-      </div>
-    `;
-  }
-
-  // Ventas recientes
-  const vtbody = document.getElementById('cubitos-ventas-tbody');
-  if (vtbody) {
-    const { data } = await sb.from('cubitos_ventas').select('*').order('created_at', { ascending: false }).limit(50);
-    vtbody.innerHTML = (data || []).length ? data.map(v => `
-      <tr>
-        <td style="font-size:12px;color:var(--text2)">${escapeHTML(v.fecha)}</td>
-        <td>${escapeHTML(v.descripcion)}${v.nota ? `<br><small style="color:var(--text3)">${escapeHTML(v.nota)}</small>` : ''}</td>
-        <td style="font-weight:500;color:#f4d675">$${Number(v.monto).toLocaleString('es-AR')}</td>
-        <td style="color:var(--text2)">${escapeHTML(v.vendedor)}</td>
-      </tr>
-    `).join('') : `<tr><td colspan="4" class="empty">Sin ventas aún.</td></tr>`;
-  }
-
-  // Gastos recientes
-  const gtbody = document.getElementById('cubitos-gastos-tbody');
-  if (gtbody) {
-    const { data } = await sb.from('cubitos_gastos').select('*').order('created_at', { ascending: false }).limit(50);
-    gtbody.innerHTML = (data || []).length ? data.map(g => `
-      <tr>
-        <td style="font-size:12px;color:var(--text2)">${escapeHTML(g.fecha)}</td>
-        <td>${escapeHTML(g.descripcion)}${g.nota ? `<br><small style="color:var(--text3)">${escapeHTML(g.nota)}</small>` : ''}</td>
-        <td style="font-weight:500;color:#f87171">$${Number(g.monto).toLocaleString('es-AR')}</td>
-      </tr>
-    `).join('') : `<tr><td colspan="3" class="empty">Sin gastos aún.</td></tr>`;
+async function inicializarApp() {
+  try {
+    await loadProductOptions();
+  } catch (error) {
+    console.error(
+      "Error inicializando productos:",
+      error
+    );
   }
 }
 
-async function submitCubitosVenta() {
-  const desc  = document.getElementById('cv-desc').value.trim();
-  const cant  = parseInt(document.getElementById('cv-cant').value, 10);
-  const monto = parseFloat(document.getElementById('cv-monto').value);
-  const met   = document.getElementById('cv-met').value;
-  const nota  = document.getElementById('cv-nota').value.trim();
-  const err   = document.getElementById('cv-err');
-  const btn   = document.getElementById('cv-btn');
-  err.textContent = '';
+// ==============================
+// CERRAR MODAL AL HACER CLICK
+// FUERA DE LA CAJA
+// ==============================
 
-  if (!desc) { err.textContent = 'Ingresá una descripción.'; return; }
-  if (!cant || cant <= 0) { err.textContent = 'Ingresá una cantidad válida.'; return; }
-  if (!monto || monto <= 0) { err.textContent = 'Ingresá un monto válido.'; return; }
+document.addEventListener(
+  "click",
+  event => {
 
-  btn.textContent = 'Guardando...'; btn.disabled = true;
+    const modal =
+      document.getElementById(
+        "producto-modal"
+      );
 
-  const { error } = await sb.from('cubitos_ventas').insert([{
-    fecha: todayStr(), hora: nowTime(),
-    descripcion: desc, cantidad: cant, monto, metodo: met,
-    nota: nota || null,
-    vendedor: currentUser ? currentUser.display : 'Sin vendedor'
-  }]);
+    if (!modal) return;
 
-  btn.textContent = 'Registrar venta'; btn.disabled = false;
+    if (
+      event.target.classList.contains(
+        "producto-modal-backdrop"
+      )
+    ) {
+      closeProductModal();
+    }
 
-  if (error) { err.textContent = 'Error al guardar.'; console.error(error); return; }
+  }
+);
 
-  document.getElementById('cv-desc').value = '';
-  document.getElementById('cv-cant').value = '1';
-  document.getElementById('cv-monto').value = '';
-  document.getElementById('cv-nota').value = '';
-  showToast('✓ Venta de cubitos registrada', 'ok');
-  loadCubitos();
-}
+// ==============================
+// EXPONER FUNCIONES
+// ==============================
+// Estas funciones se usan desde
+// onclick="" en el HTML.
 
-async function submitCubitosGasto() {
-  const desc  = document.getElementById('cg-desc').value.trim();
-  const monto = parseFloat(document.getElementById('cg-monto').value);
-  const nota  = document.getElementById('cg-nota').value.trim();
-  const err   = document.getElementById('cg-err');
-  const btn   = document.getElementById('cg-btn');
-  err.textContent = '';
+window.doLogin = doLogin;
+window.doLogout = doLogout;
 
-  if (!desc) { err.textContent = 'Ingresá una descripción.'; return; }
-  if (!monto || monto <= 0) { err.textContent = 'Ingresá un monto válido.'; return; }
+window.goTab = goTab;
 
-  btn.textContent = 'Guardando...'; btn.disabled = true;
+window.loadDashboard = loadDashboard;
+window.loadStock = loadStock;
+window.loadHistorial = loadHistorial;
+window.loadUsuarios = loadUsuarios;
 
-  const { error } = await sb.from('cubitos_gastos').insert([{
-    fecha: todayStr(), hora: nowTime(),
-    descripcion: desc, monto,
-    nota: nota || null,
-    vendedor: currentUser ? currentUser.display : 'Sin vendedor'
-  }]);
+window.crearUsuario = crearUsuario;
+window.eliminarUsuario = eliminarUsuario;
 
-  btn.textContent = 'Registrar gasto'; btn.disabled = false;
+window.agregarProductoStock =
+  agregarProductoStock;
 
-  if (error) { err.textContent = 'Error al guardar.'; console.error(error); return; }
+window.agregarFilaTalle =
+  agregarFilaTalle;
 
-  document.getElementById('cg-desc').value = '';
-  document.getElementById('cg-monto').value = '';
-  document.getElementById('cg-nota').value = '';
-  showToast('✓ Gasto registrado', 'ok');
-  loadCubitos();
-}
+window.eliminarFilaTalle =
+  eliminarFilaTalle;
+
+window.editarStockManual =
+  editarStockManual;
+
+window.eliminarProductoStock =
+  eliminarProductoStock;
+
+window.openProductModal =
+  openProductModal;
+
+window.closeProductModal =
+  closeProductModal;
+
+window.setProductFilter =
+  setProductFilter;
+
+window.renderProductModal =
+  renderProductModal;
+
+window.seleccionarProductoVenta =
+  seleccionarProductoVenta;
+
+window.cambiarProductoVenta =
+  cambiarProductoVenta;
+
+window.cargarTallesVenta =
+  cargarTallesVenta;
+
+window.actualizarStockTalleVenta =
+  actualizarStockTalleVenta;
+
+window.submitVenta =
+  submitVenta;
+
+// ==============================
+// ARRANCAR APP
+// ==============================
+
+inicializarApp();

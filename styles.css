@@ -4778,3 +4778,600 @@ body.producto-modal-open {
   }
 }
 
+/* =========================================================
+   TALLAS Y CANTIDADES — STOCK
+   ========================================================= */
+
+.stock-talles-field {
+  grid-column: 1 / -1;
+}
+
+.stock-talles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.stock-talle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.stock-talle-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stock-talle-remove {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 22px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.stock-talle-remove:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.stock-talle-add {
+  margin-top: 12px;
+}
+
+.stock-talles-help {
+  display: block;
+  margin-top: 8px;
+  color: var(--text2);
+  font-size: 12px;
+}
+
+/* =========================================================
+   TALLE EN VENTA
+   ========================================================= */
+
+.venta-talle-field {
+  margin-top: 18px;
+}
+
+.venta-talle-field.hidden {
+  display: none;
+}
+
+#v-talle {
+  width: 100%;
+}
+
+.venta-talle-info {
+  display: block;
+  margin-top: 6px;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+/* =========================================================
+   TALLAS EN TARJETAS DE STOCK
+   ========================================================= */
+
+.stock-card-talles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.stock-card-talle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.stock-card-talle strong {
+  color: var(--text);
+}
+
+.stock-card-talle span {
+  color: var(--text2);
+}
+
+@media (max-width: 600px) {
+  .stock-talle-row {
+    grid-template-columns: 1fr 110px 40px;
+    gap: 7px;
+  }
+}
+
+<!-- TALLE -->
+
+<div
+  class="field venta-talle-field"
+  id="venta-talle-field"
+  style="display: none"
+>
+  <label>Talle</label>
+
+  <select id="v-talle">
+    <option value="">Seleccioná un talle</option>
+  </select>
+
+  <small id="v-talle-info" class="venta-talle-info">
+    Seleccioná un talle
+  </small>
+</div>
+
+<!-- CANTIDAD -->
+
+<div class="field">
+  <label>Cantidad</label>
+
+  <input
+    type="number"
+    id="v-cantidad"
+    value="1"
+    min="1"
+    step="1"
+  />
+
+  <small id="v-stock-info" class="venta-stock-info">
+    Seleccioná un producto
+  </small>
+</div>
+
+/* =========================================================
+   VENTAAPP — NUEVA VENTA GRANDE
+   DISEÑO AMPLIO PARA TODA LA CARGA DE VENTA
+   ========================================================= */
+
+
+/* =========================================================
+   CONTENEDOR DE NUEVA VENTA
+   ========================================================= */
+
+#screen-app #tab-venta {
+  max-width: 1250px !important;
+  margin: 0 auto !important;
+}
+
+
+/* =========================================================
+   TARJETA PRINCIPAL
+   ========================================================= */
+
+#screen-app #tab-venta .form-card {
+  width: 100% !important;
+
+  box-sizing: border-box !important;
+
+  padding: 38px !important;
+
+  border-radius: 22px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.018)
+    ) !important;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.09) !important;
+
+  box-shadow:
+    0 25px 70px rgba(0, 0, 0, 0.28) !important;
+}
+
+
+/* TÍTULO */
+
+#screen-app #tab-venta .form-card > h2 {
+  font-size: 22px !important;
+
+  margin-bottom: 30px !important;
+
+  color: #f3f3f3 !important;
+}
+
+
+/* =========================================================
+   TODOS LOS LABEL
+   ========================================================= */
+
+#screen-app #tab-venta .field label {
+  display: block !important;
+
+  margin-bottom: 9px !important;
+
+  font-size: 13px !important;
+
+  font-weight: 600 !important;
+
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+
+/* =========================================================
+   TODOS LOS INPUT / SELECT / TEXTAREA
+   ========================================================= */
+
+#screen-app #tab-venta .field input,
+#screen-app #tab-venta .field select,
+#screen-app #tab-venta .field textarea {
+  width: 100% !important;
+
+  box-sizing: border-box !important;
+
+  min-height: 52px !important;
+
+  padding: 14px 16px !important;
+
+  border-radius: 12px !important;
+
+  font-size: 14px !important;
+
+  background:
+    rgba(0, 0, 0, 0.30) !important;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+
+/* TEXTAREA */
+
+#screen-app #tab-venta .field textarea {
+  min-height: 115px !important;
+
+  resize: vertical !important;
+
+  line-height: 1.5 !important;
+}
+
+
+/* =========================================================
+   PRODUCTO
+   ========================================================= */
+
+#screen-app #tab-venta .venta-producto-field {
+  margin-bottom: 25px !important;
+}
+
+
+/* BOTÓN SELECCIONAR PRODUCTO */
+
+#screen-app #tab-venta .venta-producto-selector {
+  width: 100% !important;
+
+  min-height: 82px !important;
+
+  padding: 17px 20px !important;
+
+  box-sizing: border-box !important;
+
+  border-radius: 14px !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 15px !important;
+}
+
+
+/* ICONO */
+
+#screen-app #tab-venta
+.venta-producto-placeholder-icon {
+  width: 46px !important;
+
+  height: 46px !important;
+
+  min-width: 46px !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  border-radius: 12px !important;
+
+  font-size: 25px !important;
+}
+
+
+/* TEXTO PRODUCTO */
+
+#screen-app #tab-venta
+.venta-producto-selector-text {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  align-items: flex-start !important;
+
+  gap: 5px !important;
+}
+
+#screen-app #tab-venta
+.venta-producto-selector-text strong {
+  font-size: 15px !important;
+}
+
+#screen-app #tab-venta
+.venta-producto-selector-text small {
+  font-size: 11px !important;
+}
+
+
+/* =========================================================
+   PRODUCTO SELECCIONADO
+   ========================================================= */
+
+#screen-app #tab-venta
+.venta-producto-selected {
+  min-height: 90px !important;
+
+  padding: 14px 18px !important;
+
+  box-sizing: border-box !important;
+
+  border-radius: 14px !important;
+}
+
+#screen-app #tab-venta
+.venta-producto-selected-image {
+  width: 65px !important;
+
+  height: 65px !important;
+
+  min-width: 65px !important;
+
+  border-radius: 11px !important;
+
+  overflow: hidden !important;
+}
+
+#screen-app #tab-venta
+.venta-producto-selected-image img {
+  width: 100% !important;
+
+  height: 100% !important;
+
+  object-fit: contain !important;
+}
+
+#screen-app #tab-venta
+.venta-producto-selected-info strong {
+  font-size: 16px !important;
+}
+
+#screen-app #tab-venta
+.venta-producto-selected-info span {
+  font-size: 12px !important;
+}
+
+
+/* =========================================================
+   TALLE + CANTIDAD
+   ========================================================= */
+
+#screen-app #tab-venta .venta-talle-field {
+  margin-top: 0 !important;
+
+  margin-bottom: 22px !important;
+}
+
+
+/* CANTIDAD */
+
+#screen-app #tab-venta #v-cantidad {
+  min-height: 56px !important;
+
+  font-size: 17px !important;
+
+  font-weight: 600 !important;
+}
+
+
+/* INFORMACIÓN DE STOCK */
+
+#screen-app #tab-venta .venta-stock-info,
+#screen-app #tab-venta .venta-talle-info {
+  display: block !important;
+
+  margin-top: 7px !important;
+
+  font-size: 12px !important;
+}
+
+
+/* =========================================================
+   MONEDA + MONTO
+   ========================================================= */
+
+#screen-app #tab-venta .form-row {
+  display: grid !important;
+
+  grid-template-columns:
+    1fr 1fr !important;
+
+  gap: 22px !important;
+
+  margin-bottom: 22px !important;
+}
+
+
+/* MONTO MÁS DESTACADO */
+
+#screen-app #tab-venta #v-amt {
+  min-height: 56px !important;
+
+  font-size: 18px !important;
+
+  font-weight: 600 !important;
+}
+
+
+/* =========================================================
+   MÉTODO DE PAGO
+   ========================================================= */
+
+#screen-app #tab-venta #v-met {
+  min-height: 56px !important;
+}
+
+
+/* =========================================================
+   ESPACIADO GENERAL
+   ========================================================= */
+
+#screen-app #tab-venta .field {
+  margin-bottom: 22px !important;
+}
+
+
+/* =========================================================
+   NOTA
+   ========================================================= */
+
+#screen-app #tab-venta #v-nota {
+  min-height: 120px !important;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+#screen-app #tab-venta #v-err {
+  min-height: 20px !important;
+
+  margin:
+    5px 0 15px !important;
+
+  font-size: 12px !important;
+}
+
+
+/* =========================================================
+   BOTÓN REGISTRAR
+   ========================================================= */
+
+#screen-app #tab-venta #v-btn {
+  width: 100% !important;
+
+  min-height: 58px !important;
+
+  margin-top: 8px !important;
+
+  border-radius: 13px !important;
+
+  font-size: 15px !important;
+
+  letter-spacing: 0.2px !important;
+}
+
+
+/* =========================================================
+   PANTALLAS GRANDES
+   ========================================================= */
+
+@media (min-width: 1300px) {
+
+  #screen-app #tab-venta {
+    max-width: 1350px !important;
+  }
+
+  #screen-app #tab-venta .form-card {
+    padding: 45px !important;
+  }
+
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+  #screen-app #tab-venta {
+    max-width: none !important;
+  }
+
+  #screen-app #tab-venta .form-card {
+    padding: 25px !important;
+  }
+
+}
+
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  #screen-app #tab-venta .form-card {
+    padding: 18px !important;
+
+    border-radius: 15px !important;
+  }
+
+  #screen-app #tab-venta .form-card > h2 {
+    font-size: 19px !important;
+  }
+
+  #screen-app #tab-venta .form-row {
+    grid-template-columns: 1fr !important;
+
+    gap: 0 !important;
+  }
+
+  #screen-app #tab-venta
+  .venta-producto-selector {
+    min-height: 72px !important;
+  }
+
+}
+
+/* =========================================================
+   NUEVA VENTA — OCUPAR TODO EL ANCHO DISPONIBLE
+   ========================================================= */
+
+#screen-app #tab-venta {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#screen-app #tab-venta .form-card {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Aprovechar todo el ancho del contenido */
+#screen-app .app-content {
+  width: 100% !important;
+}
+
+/* En pantallas grandes dejar un pequeño margen */
+@media (min-width: 1000px) {
+  #screen-app #tab-venta .form-card {
+    width: 100% !important;
+  }
+}

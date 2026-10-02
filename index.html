@@ -401,10 +401,28 @@
                 </div>
               </div>
 
+              <!-- TALLE -->
+
+              <div
+                class="field venta-talle-field"
+                id="venta-talle-field"
+                style="display: none"
+              >
+                <label>Talle</label>
+
+                <select id="v-talle">
+                  <option value="">Seleccioná un talle</option>
+                </select>
+
+                <small id="v-talle-info" class="venta-talle-info">
+                  Seleccioná un talle
+                </small>
+              </div>
+
               <!-- CANTIDAD -->
 
               <div class="field">
-                <label> Cantidad </label>
+                <label>Cantidad</label>
 
                 <input
                   type="number"
@@ -543,33 +561,51 @@
                   </select>
                 </div>
 
-                <!-- TALLA -->
+                <!-- TALLAS Y CANTIDADES -->
+                <div class="stock-field stock-talles-field">
+                  <label>Talles y cantidades</label>
 
-                <div class="stock-field">
-                  <label> Talla </label>
+                  <div id="stock-talles-list" class="stock-talles-list">
+                    <div class="stock-talle-row">
+                      <input
+                        type="text"
+                        class="stock-talle-input"
+                        placeholder="Talle (ej: 38, M, XL)"
+                      />
 
-                  <input
-                    type="text"
-                    id="stock-talla"
-                    placeholder="S, M, L, XL, 38, 40, Única..."
-                  />
+                      <input
+                        type="number"
+                        class="stock-talle-cantidad"
+                        min="0"
+                        step="1"
+                        value="0"
+                        placeholder="Cantidad"
+                      />
+
+                      <button
+                        type="button"
+                        class="stock-talle-remove"
+                        onclick="eliminarFilaTalle(this)"
+                        title="Eliminar talle"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn-outline stock-talle-add"
+                    onclick="agregarFilaTalle()"
+                  >
+                    + Agregar talle
+                  </button>
+
+                  <small class="stock-talles-help">
+                    Podés cargar varios talles del mismo producto en una sola
+                    vez.
+                  </small>
                 </div>
-
-                <!-- CANTIDAD -->
-
-                <div class="stock-field">
-                  <label> Cantidad </label>
-
-                  <input
-                    type="number"
-                    id="stock-cantidad"
-                    min="0"
-                    step="1"
-                    value="0"
-                    placeholder="0"
-                  />
-                </div>
-
                 <!-- IMAGEN -->
 
                 <div class="stock-field stock-image-field">
